@@ -5,7 +5,7 @@
   <head>
     
     <meta charset="utf-8">
-    <title>Social Media Viz Demo</title>
+    <title>Data Viz Project 2</title>
     
   </head>
   
@@ -29,7 +29,7 @@ window.addEventListener("load",run);
 
 function run () {
 
-    var data = getDataRows("Facebook","");
+    var data = getDataRows("Facebook","Gender");
 
     var svg = document.getElementById("viz");
 
@@ -44,6 +44,8 @@ function run () {
     var margin = 100;
     var chartHeight = height - 2*margin;
     var chartWidth = width - 2*margin;
+
+    
 
     // figure out the width of the bars so that all bars fit and 
     // there is one bar width between them
