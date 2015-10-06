@@ -5,8 +5,14 @@
   <head>
     
     <meta charset="utf-8">
+
     <title>Data Viz Project 2</title>
-    
+
+     <!-- load D3 library -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+
+
   </head>
   
   <body>
@@ -14,78 +20,70 @@
     <svg id="viz" height="500" width="800" style="border: 1px solid grey;">
     </svg>
     
+
     <script>
       
 window.addEventListener("load",run);
-      
-
-/*
- * Demo: social media 2013-2014 data
- * 
- * Version charting a single year
- *
- */
-
 
 function run () {
-
     var data = getDataRows("Facebook","Gender");
 
-    var svg = document.getElementById("viz");
+    var svg = d3.select("#viz");
 
     // get the size of the SVG element
-    var height = svg.getAttribute("height");
-    var width = svg.getAttribute("width");
+    var height = svg.attr("height");
+    var width = svg.attr("width");
 
     // the namespace for creating SVG elements
     var svgns = "http://www.w3.org/2000/svg";
 
     // the chart lives in the svg surrounded by a margin of 100px
-    var margin = 100;
+    var margin = 50;
     var chartHeight = height - 2*margin;
     var chartWidth = width - 2*margin;
 
-    
+    // Get the outer radius of each donut
+    var radius = 0;
+    if ((chartWidth/data.length - margin/2) < chartHeight) {
+    	radius = chartWidth/(2*data.length) - margin/2;
+    }
+    else {
+    	radius = chartHeight/2;
+    }
+    var centery = margin + chartHeight/2;
 
-    // figure out the width of the bars so that all bars fit and 
-    // there is one bar width between them
-    var barWidth = chartWidth/(2*data.length-1);
+    data.forEach(function(v,i){
+	    var centerx = margin + (2*i + 1)*chartWidth/(2*data.length);
+    	var users = d3.svg.arc()
+	    	.innerRadius(radius/2)
+	    	.outerRadius(radius)
+	    	.startAngle(0)
+	    	.endAngle(v.value/100*2*Math.PI);
 
-    data.forEach(function(v,i) {
-	// compute the height of the bar as a proportion of the 
-	// available chartHeight
-	var barHeight = chartHeight*v.value/100;
-	// figure out where the vetical bar starts
-	var yPos = height-margin-barHeight;
-	// create bar
-	var elt = document.createElementNS(svgns,"rect")
-	elt.setAttributeNS(null,"x",margin+i*2*barWidth);
-	elt.setAttributeNS(null,"y",yPos);
-	elt.setAttributeNS(null,"width",barWidth);
-	elt.setAttributeNS(null,"height",barHeight);
-	elt.setAttributeNS(null,"fill","blue");
-	svg.appendChild(elt);
+	    svg.append("path")
+    		.attr("d", users)
+    		.attr("transform", "translate(" + centerx + "," + centery + ")")
+    		.style("fill", "green");
 
-	// create value text
-	elt = document.createElementNS(svgns,"text")
-	elt.setAttributeNS(null,"x",margin+i*2*barWidth+barWidth/2);
- 	elt.setAttributeNS(null,"y",yPos-20);
-	elt.setAttributeNS(null,"dy","0.3em");
-	elt.setAttributeNS(null,"text-anchor","middle");
-	elt.appendChild(document.createTextNode(v.value+"%"));
-	svg.appendChild(elt);
+    	var nonusers = d3.svg.arc()
+	    	.innerRadius(radius/2)
+	    	.outerRadius(radius)
+	    	.startAngle(v.value/100*2*Math.PI)
+	    	.endAngle(2*Math.PI);
 
-	// create label text
-	elt = document.createElementNS(svgns,"text")
-	elt.setAttributeNS(null,"x",margin+i*2*barWidth+barWidth/2);
-	elt.setAttributeNS(null,"y",margin+chartHeight+50);
-	elt.setAttributeNS(null,"dy","0.3em");
-	elt.setAttributeNS(null,"text-anchor","middle");
-	elt.appendChild(document.createTextNode(v.group));
-	svg.appendChild(elt);
+	    svg.append("path")
+    		.attr("d", nonusers)
+    		.attr("transform", "translate(" + centerx + "," + centery + ")")
+    		.style("fill", "blue");
+
+
     });
 }
 
+function createStackedBar(data) {
+
+
+}
 
 /* From 
    http://www.pewinternet.org/files/2015/08/Social-Media-Update-2015-FINAL2.pdf
