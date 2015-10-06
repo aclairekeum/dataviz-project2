@@ -26,11 +26,76 @@
 window.addEventListener("load",run);
 
 function run () {
-    var data = getDataRows("Facebook","Gender");
+	initializeView("Facebook", "Gender");
+	updateView("Instagram", "Gender");
+}
+
+function initializeView(platform,category){
+	var d = getDataRows(platform,category);
 
     var svg = d3.select("#viz");
 
     // get the size of the SVG element
+    var height = svg.attr("height");
+    var width = svg.attr("width");
+
+    // the namespace for creating SVG elements
+    var svgns = "http://www.w3.org/2000/svg";
+
+    // the chart lives in the svg surrounded by a margin of 100px
+    var margin = 50;
+    var chartHeight = height - 2*margin;
+    var chartWidth = width - 2*margin;
+
+    // Get the outer radius of each donut
+    var radius = 0;
+    if ((chartWidth/d.length - margin/2) < chartHeight) {
+    	radius = chartWidth/(2*d.length) - margin/2;
+    }
+    else {
+    	radius = chartHeight/2;
+    }
+    var centery = margin + chartHeight/2;
+    
+    var colors = ['green', 'blue'];
+    var circlewidth = chartWidth/(2*d.length);
+
+    var drawArc = d3.svg.arc()
+    	.innerRadius(radius/2)
+    	.outerRadius(radius)
+
+    sel = svg.selectAll("g")
+    	.data(d)
+    	.enter()
+    	.append("g");
+
+    sel.append("path")
+    	.each(function(d,i) {
+    		d.userStartAngle = 0;
+    		d.userEndAngle = Math.PI*d.value/50;
+    	})
+    	.attr("d", drawArc)
+    	.attr("transform", function(d,i) {return "translate(" + (margin + (2*i+1)*circlewidth) + "," + centery + ")"})
+    	.attr("class", "userslice")
+    	.style("fill", "green");
+
+    sel.append("path")
+        .each(function(d,i) {
+    		d.nonuserStartAngle = Math.PI*d.value/50;
+    		d.nonuserEndAngle = 2*Math.PI;
+    	})
+    	.attr("d", drawArc)
+    	.attr("transform", function(d,i) {return "translate(" + (margin + (2*i+1)*circlewidth) + "," + centery + ")"})
+    	.attr("class", "nonuserslice")
+    	.style("fill", "blue");
+}
+
+function updateView(platform,category){
+	var data = getDataRows(platform,category);
+
+	var svg = d3.select("#viz");
+
+	 // get the size of the SVG element
     var height = svg.attr("height");
     var width = svg.attr("width");
 
@@ -51,39 +116,70 @@ function run () {
     	radius = chartHeight/2;
     }
     var centery = margin + chartHeight/2;
-    //TODO ADD LABELS
-    data.forEach(function(v,i){
-	    var centerx = margin + (2*i + 1)*chartWidth/(2*data.length);
-    	var users = d3.svg.arc()
-	    	.innerRadius(radius/2)
-	    	.outerRadius(radius)
-	    	.startAngle(0)
-	    	.endAngle(v.value/100*2*Math.PI);
+    
+    var colors = ['green', 'blue'];
+    var circlewidth = chartWidth/(2*data.length);
 
-	    svg.append("path")
-    		.attr("d", users)
-    		.attr("transform", "translate(" + centerx + "," + centery + ")")
-    		.style("fill", "green");
-
-    	var nonusers = d3.svg.arc()
-	    	.innerRadius(radius/2)
-	    	.outerRadius(radius)
-	    	.startAngle(v.value/100*2*Math.PI)
-	    	.endAngle(2*Math.PI);
-
-	    svg.append("path")
-    		.attr("d", nonusers)
-    		.attr("transform", "translate(" + centerx + "," + centery + ")")
-    		.style("fill", "blue");
+    var drawArc = d3.svg.arc()
+    	.innerRadius(radius/2)
+    	.outerRadius(radius)
 
 
-    });
+	var sel = svg.selectAll("g")
+
+	var arc = sel.select(".userslice")
+		.each(function(d,i) {
+			//This is a little weird. We want to preserve
+			//the startangle and endangle information so
+			//we can't override the data. We do, however, 
+			//want to be able to update the arc, so we do 
+			//need to change the platform and the value. 
+			//Is there a better way to do this?
+			d.platform = data[i].platform;
+			d.value = data[i].value
+    	})
+		.transition()
+		.duration(750)
+		.attrTween("d", function(d,i) {
+			var interpolate = d3.interpolate( d.userEndAngle, Math.PI*d.value/50 );
+	        return function(t) {
+	            d.endAngle = interpolate(t);
+	            d.startAngle = 0;
+	            return drawArc(d);
+	        };
+		})
+
+	var arc = sel.select(".nonuserslice")
+		.transition()
+		.duration(750)
+		.attrTween("d", function(d,i) {
+			var interpolate = d3.interpolate( d.nonuserStartAngle, Math.PI*d.value/50 );
+	        return function(t) {
+	            d.endAngle = 2*Math.PI;
+	            d.startAngle = interpolate(t);
+	            return drawArc(d);
+	        };
+		})
 }
 
-function createStackedBar(data) {
 
 
-}
+// function arcTween(transition, arc, radius, newStartAngle, newFinishAngle) {
+//     transition.attrTween("d", function (d) {
+//         var interpolateStart = d3.interpolate(d.startAngle, newStartAngle);
+//         var interpolateEnd = d3.interpolate(d.endAngle, newFinishAngle);
+//         return function (t) {
+//             d.startAngle = interpolateStart(t);
+//             d.endAngle = interpolateEnd(t);
+//             d.innerRadius = radius/2;
+//             d.outerRadius = radius;
+//             return arc(d);
+//         };
+//     });
+// }
+
+
+
 
 /* From 
    http://www.pewinternet.org/files/2015/08/Social-Media-Update-2015-FINAL2.pdf
