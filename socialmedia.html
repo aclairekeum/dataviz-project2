@@ -1,35 +1,72 @@
 
 <!DOCTYPE html>
 <html>
-  
   <head>
-    
     <meta charset="utf-8">
-
     <title>Data Viz Project 2</title>
-
-     <!-- load D3 library -->
-
+    <!-- load D3 library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+     <style>
+         text {
+            font-family: sans-serif;
+         }
 
+         .bar { 
+             stroke: white;
+             stroke-width: 2px;
+             fill: steelblue;
+         }
 
+         .value {
+             font-weight: bold;
+             font-size: 16px;
+             fill: blue;
+         }
+
+         .label {
+             font-size: 20px;
+         }
+
+         .title {
+             font-weight: bold;
+             font-size: 20px;
+             fill: black;
+         }
+    </style>
   </head>
   
   <body>
     
     <svg id="viz" height="500" width="800" style="border: 1px solid grey;">
     </svg>
-    
+
+     <div>
+      <button id="button_Gender">Gender</button>
+      <button id="button_Race">Race</button>
+      <button id="button_Education">Education</button>
+      <button id="button_Environment">Environment</button>
+      <button id="button_Living">Living</button>
+      <button id="button_Income">Income</button>
+    </div>
 
     <script>
       
 window.addEventListener("load",run);
 
 function run () {
-    var data = getDataRows("Facebook","Gender");
 
+    button_Gender.addEventListener("click",function() { updateView("Gender"); });
+    button_Race.addEventListener("click",function() { updateView("Race"); });
+    button_Education.addEventListener("click",function() { updateView("Education"); });
+    button_Environment.addEventListener("click",function() { updateView("Environment"); });
+    button_Living.addEventListener("click",function() { updateView("Living"); });
+    button_Income.addEventListener("click",function() { updateView("Income"); });
+
+    initializeView ("Gender");
+}
+
+function initializeView(category){
     var svg = d3.select("#viz");
-
     // get the size of the SVG element
     var height = svg.attr("height");
     var width = svg.attr("width");
@@ -42,48 +79,96 @@ function run () {
     var chartHeight = height - 2*margin;
     var chartWidth = width - 2*margin;
 
+    var d = getDataRows("Facebook",category);
+
+    var barWidth = chartWidth/10
+    // var barHeight = chartHeight/(d.length) 
+    
+    //title
+    svg.append("text")
+    .attr("class","title")
+    .attr("x",width/2)
+    .attr("y",margin/2)
+    .attr("dy","0.3em")
+    .style("text-anchor","middle");
+
+    //add all "g" 
+    sel = svg.selectAll("g").data(d).enter().append("g")
+
+    //draw a rectangle
+    sel.append("rect")
+    .attr("class","bar")
+    .attr("x",function(d,i) {return margin+(i*2)*barWidth; })
+    .attr("y",height-margin)
+    .attr("width",barWidth)
+    .attr("height",20);
+
+    //label each bar graph
+    sel.append("text")
+    .attr("class","value")
+    .attr("x",function(d,i) {return margin+(i*2)*barWidth+barWidth/2; })
+    .attr("y",height-margin-20)
+    .attr("dy","0.3em")
+    .style("text-anchor","middle");
+
+    }
+
+    function updateView(category){
+
+    }
+    // sel.append("text")
+    // .attr("class","label")
+    // .attr("x",function(d,i) { return margin+(i*2)*barWidth+barWidth/2; })
+    // .attr("y",margin+chartHeight+50)
+    // .attr("dy","0.3em")
+    // .style("text-anchor","middle")
+    // .text(function(d) { return d.group; });
+
     // Get the outer radius of each donut
-    var radius = 0;
-    if ((chartWidth/data.length - margin/2) < chartHeight) {
-    	radius = chartWidth/(2*data.length) - margin/2;
-    }
-    else {
-    	radius = chartHeight/2;
-    }
-    var centery = margin + chartHeight/2;
+    // var listPlatform = ["Facebook", "Pinterest","Instagram","LinkedIn","Twitter"]
+    // var total_data = getDataRows("Facebook", "Total");
+    // total_data[0].value
 
-    data.forEach(function(v,i){
-	    var centerx = margin + (2*i + 1)*chartWidth/(2*data.length);
-    	var users = d3.svg.arc()
-	    	.innerRadius(radius/2)
-	    	.outerRadius(radius)
-	    	.startAngle(0)
-	    	.endAngle(v.value/100*2*Math.PI);
+    // var x= d3.scale.linear().range([0,width-6*margin]);
+    // var y= d3.scale.linear().range([0,height-2*margin]);
+    
+    // // if (())
+    // if ((chartWidth/data.length - margin/2) < chartHeight) {
+    //     radius = chartWidth/(2*data.length) - margin/2;
+    // }
+    // else {
+    //     radius = chartHeight/2;
+    // }
+    // var centery = margin + chartHeight/2;
 
-	    svg.append("path")
-    		.attr("d", users)
-    		.attr("transform", "translate(" + centerx + "," + centery + ")")
-    		.style("fill", "green");
+    // data.forEach(function(v,i){
+    //     // var 
+    //     var centerx = margin + (2*i + 1)*chartWidth/(2*data.length);
+    //     var users = d3.svg.arc()
+    //         .innerRadius(radius/2)
+    //         .outerRadius(radius)
+    //         .startAngle(0)
+    //         .endAngle(v.value/100*2*Math.PI);
 
-    	var nonusers = d3.svg.arc()
-	    	.innerRadius(radius/2)
-	    	.outerRadius(radius)
-	    	.startAngle(v.value/100*2*Math.PI)
-	    	.endAngle(2*Math.PI);
+    //     svg.append("path")
+    //         .attr("d", users)
+    //         .attr("transform", "translate(" + centerx + "," + centery + ")")
+    //         .style("fill", "green");
 
-	    svg.append("path")
-    		.attr("d", nonusers)
-    		.attr("transform", "translate(" + centerx + "," + centery + ")")
-    		.style("fill", "blue");
+    //     var nonusers = d3.svg.arc()
+    //         .innerRadius(radius/2)
+    //         .outerRadius(radius)
+    //         .startAngle(v.value/100*2*Math.PI)
+    //         .endAngle(2*Math.PI);
+
+    //     svg.append("path")
+    //         .attr("d", nonusers)
+    //         .attr("transform", "translate(" + centerx + "," + centery + ")")
+    //         .style("fill", "blue");
 
 
-    });
-}
+    // });
 
-function createStackedBar(data) {
-
-
-}
 
 /* From 
    http://www.pewinternet.org/files/2015/08/Social-Media-Update-2015-FINAL2.pdf
@@ -201,7 +286,7 @@ function getDataRows (platform,category) {
     ];
     
     return data.filter(function(row) {
-	return (row.platform===platform && row.category===category) ; });
+    return (row.platform===platform && row.category===category) ; });
 }
       
     </script>
