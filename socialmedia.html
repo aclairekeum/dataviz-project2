@@ -1,5 +1,6 @@
 
 <!DOCTYPE html>
+<!--referenced http://bl.ocks.org/mbostock/3943967 for the stacked bar plot-->
 <html>
   <head>
     <meta charset="utf-8">
@@ -32,12 +33,24 @@
              font-size: 20px;
              fill: black;
          }
+
+         .axis text {
+          font: 10px sans-serif;
+        }
+
+        .axis path,
+        .axis line {
+          fill: none;
+          stroke: #000;
+          shape-rendering: crispEdges;
+        }
+
     </style>
   </head>
   
   <body>
     
-    <svg id="viz" height="500" width="800" style="border: 1px solid grey;">
+    <svg id="viz" height="600" width="800">
     </svg>
 
      <div>
@@ -66,55 +79,127 @@ function run () {
 }
 
 function initializeView(category){
+
+    platforms = ["Facebook","Instagram","Twitter","LinkedIn","Pinterest"];
+    var addRows = null;
+    platforms.forEach(function(platform){
+            addRows += getDataRows(platform,category);
+            numtype = getDataRows(platform[0],category).length;
+            });
+    
+    var color = d3.scale.linear()
+    .domain([0, n_layers - 1])
+    .range(["#aad", "#556"]);
+
+//TESTing
+    var data = getDataRows("Facebook","Gender");
+    color.domain(d3.keys(addRows[0]).filter(function (key) {
+        return key == "type";
+        }));
+
+    // var values = d3.layout.stack()(["Female","Male"])
+    //                     .map(function(type){
+    //                         return data.map(function(d) {
+    //                             return {x: d.platform, y: +d[type]};});});
+
+    var n_layers = numtype, // number of layers
+    n_bars = data.length*5; // number of samples per layer 5 platforms,
+
+    var color = d3.scale.linear()
+    .domain([0, n_layers - 1])
+    .range(["#aad", "#556"]);
+
+    // the namespace for creating SVG elements
+    var svgns = "http://www.w3.org/2000/svg";
     var svg = d3.select("#viz");
     // get the size of the SVG element
     var height = svg.attr("height");
     var width = svg.attr("width");
 
-    // the namespace for creating SVG elements
-    var svgns = "http://www.w3.org/2000/svg";
-
     // the chart lives in the svg surrounded by a margin of 100px
     var margin = 50;
+    var barmargin = 10;
     var chartHeight = height - 2*margin;
     var chartWidth = width - 2*margin;
 
-    var d = getDataRows("Facebook",category);
+    // Our X scale
+    var x = d3.scale.ordinal()
+        .rangeRoundBands([0, chartWidth], .1);
+
+    // Our Y scale
+    var y = d3.scale.linear()
+        .rangeRound([chartHeight, 0]);
+
+    // Use our X scale to set a bottom axis
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+    // Same for our left axis
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .tickFormat(d3.format(".2s"));
 
     var barWidth = chartWidth/10
-    // var barHeight = chartHeight/(d.length) 
-    
-    //title
-    svg.append("text")
-    .attr("class","title")
-    .attr("x",width/2)
-    .attr("y",margin/2)
-    .attr("dy","0.3em")
-    .style("text-anchor","middle");
+    var barHeight = chartHeight/n_layers
 
-    //add all "g" 
-    sel = svg.selectAll("g").data(d).enter().append("g")
+    x.domain(platforms);
+    y.domain([0, 100]);
 
-    //draw a rectangle
-    sel.append("rect")
-    .attr("class","bar")
-    .attr("x",function(d,i) {return margin+(i*2)*barWidth; })
-    .attr("y",height-margin)
-    .attr("width",barWidth)
-    .attr("height",20);
+    var axisYtrans = height-2*margin+30;
+    var axisXtrans = 30;
 
-    //label each bar graph
-    sel.append("text")
-    .attr("class","value")
-    .attr("x",function(d,i) {return margin+(i*2)*barWidth+barWidth/2; })
-    .attr("y",height-margin-20)
-    .attr("dy","0.3em")
-    .style("text-anchor","middle");
+    svg.append("g")
+      .attr("class", "x axis")
+       .attr("transform", "translate(" + axisXtrans +","+ axisYtrans +")")
+      .call(xAxis);
+    svg.append("g")
+      .attr("class", "y axis")
+       .attr("transform", "translate(" + axisXtrans +","+ axisXtrans +")")
+      .call(yAxis)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".101em")
+      .style("text-anchor", "end")
+      .text("percentage");
 
+       platform = svg.selectAll("platform")
+        .data(platforms)
+        .enter().append("g")
+        .attr("transform", function (d) {
+        return "translate(" + x(d) + ",0)";})
+
+        platform.append("rect")
+            .attr("class","bar")
+            .attr("x",function(d,i) { console.log(i);
+                return axisXtrans+barmargin+(i)*barWidth/8; })
+            .attr("y",axisYtrans)
+            .attr("width",barWidth)
+            .attr("height",10)
+        platform.append("rect")
+            .attr("class","bar")
+            .attr("x",function(d,i) { console.log(i);
+                return axisXtrans+barmargin+(i)*barWidth/8; })
+            .attr("y",axisYtrans+10)
+            .attr("width",barWidth)
+            .attr("height",20)
+            .fill("style", "blue");
+        
+        //label each bar graph
+        platform.append("text")
+        .attr("class","value")
+        .attr("x",function(d,i) {return barmargin+(i*2)*barWidth+barWidth/2; })
+        .attr("y",height-margin-20)
+        .attr("dy","0.3em")
+        .style("text-anchor","middle");
     }
 
     function updateView(category){
 
+        var data = getDataRows(category);
+        var svg = d3.selet("#viz");
     }
     // sel.append("text")
     // .attr("class","label")
@@ -177,112 +262,112 @@ function initializeView(category){
 
 function getDataRows (platform,category) {
     var data = [
-    { platform: "Facebook", category: "Total", type: "Total", value: "72"},
-    { platform: "Facebook", category: "Gender", type: "Men", value: "66"},
-    { platform: "Facebook", category: "Gender", type: "Women", value: "77"},
-    { platform: "Facebook", category: "Race", type: "White, Non-Hispanic", value: "70"},
-    { platform: "Facebook", category: "Race", type: "Black, Non-Hispanic", value: "67"},
-    { platform: "Facebook", category: "Race", type: "Hispanic", value: "75"},
-    { platform: "Facebook", category: "Age", type: "18-29", value: "82"},
-    { platform: "Facebook", category: "Age", type: "30-49", value: "79"},
-    { platform: "Facebook", category: "Age", type: "50-64", value: "64"},
-    { platform: "Facebook", category: "Age", type: "65+", value: "48"},
-    { platform: "Facebook", category: "Education", type: "High School", value: "71"},
-    { platform: "Facebook", category: "Education", type: "Some College", value: "72"},
-    { platform: "Facebook", category: "Education", type: "College", value: "72"},
-    { platform: "Facebook", category: "Income", type: "Less than 30000", value: "73"},
-    { platform: "Facebook", category: "Income", type: "30000-49999", value: "72"},
-    { platform: "Facebook", category: "Income", type: "50000-74999", value: "66"},
-    { platform: "Facebook", category: "Income", type: "More than 75000", value: "78"},
-    { platform: "Facebook", category: "Living", type: "Urban", value: "74"},
-    { platform: "Facebook", category: "Living", type: "Suburban", value: "72"},
-    { platform: "Facebook", category: "Living", type: "Rural", value: "67"},
+    { platform: "Facebook", category: "Total", type: "Total", value: 72},
+    { platform: "Facebook", category: "Gender", type: "Men", value: 66},
+    { platform: "Facebook", category: "Gender", type: "Women", value: 77},
+    { platform: "Facebook", category: "Race", type: "White, Non-Hispanic", value: 70},
+    { platform: "Facebook", category: "Race", type: "Black, Non-Hispanic", value: 67},
+    { platform: "Facebook", category: "Race", type: "Hispanic", value: 75},
+    { platform: "Facebook", category: "Age", type: "18-29", value: 82},
+    { platform: "Facebook", category: "Age", type: "30-49", value: 79},
+    { platform: "Facebook", category: "Age", type: "50-64", value: 64},
+    { platform: "Facebook", category: "Age", type: "65+", value: 48},
+    { platform: "Facebook", category: "Education", type: "High School", value: 71},
+    { platform: "Facebook", category: "Education", type: "Some College", value: 72},
+    { platform: "Facebook", category: "Education", type: "College", value: 72},
+    { platform: "Facebook", category: "Income", type: "Less than 30000", value: 73},
+    { platform: "Facebook", category: "Income", type: "30000-49999", value: 72},
+    { platform: "Facebook", category: "Income", type: "50000-74999", value: 66},
+    { platform: "Facebook", category: "Income", type: "More than 75000", value: 78},
+    { platform: "Facebook", category: "Living", type: "Urban", value: 74},
+    { platform: "Facebook", category: "Living", type: "Suburban", value: 72},
+    { platform: "Facebook", category: "Living", type: "Rural", value: 67},
 
-    { platform: "Pinterest", category: "Total", type: "Total", value: "31"},
-    { platform: "Pinterest", category: "Gender", type: "Men", value: "16"},
-    { platform: "Pinterest", category: "Gender", type: "Women", value: "44"},
-    { platform: "Pinterest", category: "Race", type: "White, Non-Hispanic", value: "32"},
-    { platform: "Pinterest", category: "Race", type: "Black, Non-Hispanic", value: "23"},
-    { platform: "Pinterest", category: "Race", type: "Hispanic", value: "32"},
-    { platform: "Pinterest", category: "Age", type: "18-29", value: "37"},
-    { platform: "Pinterest", category: "Age", type: "30-49", value: "36"},
-    { platform: "Pinterest", category: "Age", type: "50-64", value: "24"},
-    { platform: "Pinterest", category: "Age", type: "65+", value: "16"},
-    { platform: "Pinterest", category: "Education", type: "High School", value: "25"},
-    { platform: "Pinterest", category: "Education", type: "Some College", value: "37"},
-    { platform: "Pinterest", category: "Education", type: "College", value: "31"},
-    { platform: "Pinterest", category: "Income", type: "Less than 30000", value: "24"},
-    { platform: "Pinterest", category: "Income", type: "30000-49999", value: "37"},
-    { platform: "Pinterest", category: "Income", type: "50000-74999", value: "41"},
-    { platform: "Pinterest", category: "Income", type: "More than 75000", value: "30"},
-    { platform: "Pinterest", category: "Living", type: "Urban", value: "26"},
-    { platform: "Pinterest", category: "Living", type: "Suburban", value: "34"},
-    { platform: "Pinterest", category: "Living", type: "Rural", value: "31"},
+    { platform: "Pinterest", category: "Total", type: "Total", value: 31},
+    { platform: "Pinterest", category: "Gender", type: "Men", value: 16},
+    { platform: "Pinterest", category: "Gender", type: "Women", value: 44},
+    { platform: "Pinterest", category: "Race", type: "White, Non-Hispanic", value: 32},
+    { platform: "Pinterest", category: "Race", type: "Black, Non-Hispanic", value: 23},
+    { platform: "Pinterest", category: "Race", type: "Hispanic", value: 32},
+    { platform: "Pinterest", category: "Age", type: "18-29", value: 37},
+    { platform: "Pinterest", category: "Age", type: "30-49", value: 36},
+    { platform: "Pinterest", category: "Age", type: "50-64", value: 24},
+    { platform: "Pinterest", category: "Age", type: "65+", value: 16},
+    { platform: "Pinterest", category: "Education", type: "High School", value: 25},
+    { platform: "Pinterest", category: "Education", type: "Some College", value: 37},
+    { platform: "Pinterest", category: "Education", type: "College", value: 31},
+    { platform: "Pinterest", category: "Income", type: "Less than 30000", value: 24},
+    { platform: "Pinterest", category: "Income", type: "30000-49999", value: 37},
+    { platform: "Pinterest", category: "Income", type: "50000-74999", value: 41},
+    { platform: "Pinterest", category: "Income", type: "More than 75000", value: 30},
+    { platform: "Pinterest", category: "Living", type: "Urban", value: 26},
+    { platform: "Pinterest", category: "Living", type: "Suburban", value: 34},
+    { platform: "Pinterest", category: "Living", type: "Rural", value: 31},
 
-    { platform: "Instagram", category: "Total", type: "Total", value: "28"},
-    { platform: "Instagram", category: "Gender", type: "Men", value: "24"},
-    { platform: "Instagram", category: "Gender", type: "Women", value: "31"},
-    { platform: "Instagram", category: "Race", type: "White, Non-Hispanic", value: "21"},
-    { platform: "Instagram", category: "Race", type: "Black, Non-Hispanic", value: "47"},
-    { platform: "Instagram", category: "Race", type: "Hispanic", value: "38"},
-    { platform: "Instagram", category: "Age", type: "18-29", value: "55"},
-    { platform: "Instagram", category: "Age", type: "30-49", value: "28"},
-    { platform: "Instagram", category: "Age", type: "50-64", value: "11"},
-    { platform: "Instagram", category: "Age", type: "65+", value: "4"},
-    { platform: "Instagram", category: "Education", type: "High School", value: "25"},
-    { platform: "Instagram", category: "Education", type: "Some College", value: "32"},
-    { platform: "Instagram", category: "Education", type: "College", value: "26"},
-    { platform: "Instagram", category: "Income", type: "Less than 30000", value: "26"},
-    { platform: "Instagram", category: "Income", type: "30000-49999", value: "27"},
-    { platform: "Instagram", category: "Income", type: "50000-74999", value: "30"},
-    { platform: "Instagram", category: "Income", type: "More than 75000", value: "26"},
-    { platform: "Instagram", category: "Living", type: "Urban", value: "32"},
-    { platform: "Instagram", category: "Living", type: "Suburban", value: "28"},
-    { platform: "Instagram", category: "Living", type: "Rural", value: "18"},
+    { platform: "Instagram", category: "Total", type: "Total", value: 28},
+    { platform: "Instagram", category: "Gender", type: "Men", value: 24},
+    { platform: "Instagram", category: "Gender", type: "Women", value: 31},
+    { platform: "Instagram", category: "Race", type: "White, Non-Hispanic", value: 21},
+    { platform: "Instagram", category: "Race", type: "Black, Non-Hispanic", value: 47},
+    { platform: "Instagram", category: "Race", type: "Hispanic", value: 38},
+    { platform: "Instagram", category: "Age", type: "18-29", value: 55},
+    { platform: "Instagram", category: "Age", type: "30-49", value: 28},
+    { platform: "Instagram", category: "Age", type: "50-64", value: 11},
+    { platform: "Instagram", category: "Age", type: "65+", value:4},
+    { platform: "Instagram", category: "Education", type: "High School", value: 25},
+    { platform: "Instagram", category: "Education", type: "Some College", value: 32},
+    { platform: "Instagram", category: "Education", type: "College", value: 26},
+    { platform: "Instagram", category: "Income", type: "Less than 30000", value: 26},
+    { platform: "Instagram", category: "Income", type: "30000-49999", value: 27},
+    { platform: "Instagram", category: "Income", type: "50000-74999", value: 30},
+    { platform: "Instagram", category: "Income", type: "More than 75000", value: 26},
+    { platform: "Instagram", category: "Living", type: "Urban", value: 32},
+    { platform: "Instagram", category: "Living", type: "Suburban", value: 28},
+    { platform: "Instagram", category: "Living", type: "Rural", value: 18},
 
-    { platform: "LinkedIn", category: "Total", type:"Total", value: "25"},
-    { platform: "LinkedIn", category: "Gender", type:"Men", value: "26"},
-    { platform: "LinkedIn", category: "Gender", type:"Women", value: "25"},
-    { platform: "LinkedIn", category: "Race", type: "White, Non-Hispanic", value: "26"},
-    { platform: "LinkedIn", category: "Race", type: "Black, Non-Hispanic", value: "22"},
-    { platform: "LinkedIn", category: "Race", type: "Hispanic", value: "22"},
-    { platform: "LinkedIn", category: "Age", type:"18-29", value: "22"},
-    { platform: "LinkedIn", category: "Age", type:"30-49", value: "32"},
-    { platform: "LinkedIn", category: "Age", type:"50-64", value: "26"},
-    { platform: "LinkedIn", category: "Age", type:"65+", value: "12"},
-    { platform: "LinkedIn", category: "Education", type:"High School", value: "9"},
-    { platform: "LinkedIn", category: "Education", type:"Some College", value: "25"},
-    { platform: "LinkedIn", category: "Education", type:"College", value: "46"},
-    { platform: "LinkedIn", category: "Income", type:"Less than 30000", value: "17"},
-    { platform: "LinkedIn", category: "Income", type:"30000-49999", value: "21"},
-    { platform: "LinkedIn", category: "Income", type:"50000-74999", value: "32"},
-    { platform: "LinkedIn", category: "Income", type:"More than 75000", value: "41"},
-    { platform: "LinkedIn", category: "Employment", type:"Employed", value: "32"},
-    { platform: "LinkedIn", category: "Employment", type:"Not Employed", value: "14"},
-    { platform: "LinkedIn", category: "Living", type:"Urban", value: "30"},
-    { platform: "LinkedIn", category: "Living", type:"Suburban", value: "26"},
-    { platform: "LinkedIn", category: "Living", type:"Rural", value: "12"},
+    { platform: "LinkedIn", category: "Total", type:"Total", value: 25},
+    { platform: "LinkedIn", category: "Gender", type:"Men", value: 26},
+    { platform: "LinkedIn", category: "Gender", type:"Women", value: 25},
+    { platform: "LinkedIn", category: "Race", type: "White, Non-Hispanic", value: 26},
+    { platform: "LinkedIn", category: "Race", type: "Black, Non-Hispanic", value: 22},
+    { platform: "LinkedIn", category: "Race", type: "Hispanic", value: 22},
+    { platform: "LinkedIn", category: "Age", type:"18-29", value: 22},
+    { platform: "LinkedIn", category: "Age", type:"30-49", value: 32},
+    { platform: "LinkedIn", category: "Age", type:"50-64", value: 26},
+    { platform: "LinkedIn", category: "Age", type:"65+", value: 12},
+    { platform: "LinkedIn", category: "Education", type:"High School", value: 9},
+    { platform: "LinkedIn", category: "Education", type:"Some College", value: 25},
+    { platform: "LinkedIn", category: "Education", type:"College", value: 46},
+    { platform: "LinkedIn", category: "Income", type:"Less than 30000", value: 17},
+    { platform: "LinkedIn", category: "Income", type:"30000-49999", value: 21},
+    { platform: "LinkedIn", category: "Income", type:"50000-74999", value: 32},
+    { platform: "LinkedIn", category: "Income", type:"More than 75000", value: 41},
+    { platform: "LinkedIn", category: "Employment", type:"Employed", value: 32},
+    { platform: "LinkedIn", category: "Employment", type:"Not Employed", value: 14},
+    { platform: "LinkedIn", category: "Living", type:"Urban", value: 30},
+    { platform: "LinkedIn", category: "Living", type:"Suburban", value: 26},
+    { platform: "LinkedIn", category: "Living", type:"Rural", value: 12},
 
-    { platform: "Twitter", category: "Total", type:"Total", value: "23"},
-    { platform: "Twitter", category: "Gender", type: "Men", value: "25"},
-    { platform: "Twitter", category: "Gender", type:"Women", value: "21"},
-    { platform: "Twitter", category: "Race", type: "White, Non-Hispanic", value: "20"},
-    { platform: "Twitter", category: "Race", type: "Black, Non-Hispanic", value: "28"},
-    { platform: "Twitter", category: "Race", type: "Hispanic", value: "28"},
-    { platform: "Twitter", category: "Age", type:"18-29", value: "32"},
-    { platform: "Twitter", category: "Age", type:"30-49", value: "29"},
-    { platform: "Twitter", category: "Age", type:"50-64", value: "13"},
-    { platform: "Twitter", category: "Age", type:"65+", value: "6"},
-    { platform: "Twitter", category: "Education", type:"High School", value: "19"},
-    { platform: "Twitter", category: "Education", type:"Some College", value: "23"},
-    { platform: "Twitter", category: "Education", type:"College", value: "27"},
-    { platform: "Twitter", category: "Income", type:"Less than 30000", value: "21"},
-    { platform: "Twitter", category: "Income", type:"30000-49999", value: "19"},
-    { platform: "Twitter", category: "Income", type:"50000-74999", value: "25"},
-    { platform: "Twitter", category: "Income", type:"More than 75000", value: "26"},
-    { platform: "Twitter", category: "Living", type:"Urban", value: "30"},
-    { platform: "Twitter", category: "Living", type:"Suburban", value: "21"},
-    { platform: "Twitter", category: "Living", type:"Rural", value: "15"}
+    { platform: "Twitter", category: "Total", type:"Total", value: 23},
+    { platform: "Twitter", category: "Gender", type: "Men", value: 25},
+    { platform: "Twitter", category: "Gender", type:"Women", value: 21},
+    { platform: "Twitter", category: "Race", type: "White, Non-Hispanic", value: 20},
+    { platform: "Twitter", category: "Race", type: "Black, Non-Hispanic", value: 28},
+    { platform: "Twitter", category: "Race", type: "Hispanic", value: 28},
+    { platform: "Twitter", category: "Age", type:"18-29", value: 32},
+    { platform: "Twitter", category: "Age", type:"30-49", value: 29},
+    { platform: "Twitter", category: "Age", type:"50-64", value: 13},
+    { platform: "Twitter", category: "Age", type:"65+", value:6},
+    { platform: "Twitter", category: "Education", type:"High School", value: 19},
+    { platform: "Twitter", category: "Education", type:"Some College", value: 23},
+    { platform: "Twitter", category: "Education", type:"College", value: 27},
+    { platform: "Twitter", category: "Income", type:"Less than 30000", value: 21},
+    { platform: "Twitter", category: "Income", type:"30000-49999", value: 19},
+    { platform: "Twitter", category: "Income", type:"50000-74999", value: 25},
+    { platform: "Twitter", category: "Income", type:"More than 75000", value: 26},
+    { platform: "Twitter", category: "Living", type:"Urban", value: 30},
+    { platform: "Twitter", category: "Living", type:"Suburban", value: 21},
+    { platform: "Twitter", category: "Living", type:"Rural", value: 15}
     ];
     
     return data.filter(function(row) {
