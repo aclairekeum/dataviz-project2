@@ -12,13 +12,38 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
 
+    <style>
+    text {
+        font-family: sans-serif;
+     }
+    .userslice { 
+         stroke: white;
+         stroke-width: 2px;
+         fill: blue;
+    }  
+
+    .backgroundcircle { 
+         stroke: white;
+         stroke-width: 2px;
+         fill: black;
+    }
+
+    </style>
 
   </head>
   
   <body>
     
-    <svg id="viz" height="500" width="800" style="border: 1px solid grey;">
+    <svg id="vizq1" height="500" width="800" style="border: 1px solid grey;">
     </svg>
+
+    <div>
+        <button id="button_Facebook">Facebook</button>
+        <button id="button_Pinterest">Pinterest</button>
+        <button id="button_Instagram">Instagram</button>
+        <button id="button_LinkedIn">LinkedIn</button>
+        <button id="button_Twitter">Twitter</button>
+    </div>
     
 
     <script>
@@ -27,13 +52,18 @@ window.addEventListener("load",run);
 
 function run () {
 	initializeView("Facebook", "Gender");
-	updateView("Instagram", "Gender");
+
+   button_Facebook.addEventListener("click",function() { updateView("Facebook", "Gender"); });
+    button_Pinterest.addEventListener("click",function() { updateView("Pinterest", "Gender"); });
+    button_Instagram.addEventListener("click",function() { updateView("Instagram", "Gender"); });
+    button_LinkedIn.addEventListener("click",function() { updateView("LinkedIn", "Gender"); });
+    button_Twitter.addEventListener("click",function() { updateView("Twitter", "Gender"); });
 }
 
 function initializeView(platform,category){
 	var d = getDataRows(platform,category);
 
-    var svg = d3.select("#viz");
+    var svg = d3.select("#vizq1");
 
     // get the size of the SVG element
     var height = svg.attr("height");
@@ -56,44 +86,87 @@ function initializeView(platform,category){
     	radius = chartHeight/2;
     }
     var centery = margin + chartHeight/2;
-    
-    var colors = ['green', 'blue'];
+ 
     var circlewidth = chartWidth/(2*d.length);
 
-    var drawArc = d3.svg.arc()
-    	.innerRadius(radius/2)
-    	.outerRadius(radius)
+    svg.append("text")
+        .attr("class","title")
+        .attr("x",width/2)
+        .attr("y",margin/2)
+        .attr("dy","0.3em")
+        .style("text-anchor","middle")
+        .text ("Platform: " + platform);
 
-    sel = svg.selectAll("g")
+    var userArc = d3.svg.arc()
+    	.innerRadius(radius/2)
+    	.outerRadius(radius);
+
+    var backgroundArc = d3.svg.arc()
+        .innerRadius(16*radius/30)
+        .outerRadius(29*radius/30)
+        .startAngle(0)
+        .endAngle(2*Math.PI);
+
+    var sel = svg.selectAll("g")
     	.data(d)
     	.enter()
     	.append("g");
 
+    //Draw all the background circles
     sel.append("path")
-    	.each(function(d,i) {
-    		d.userStartAngle = 0;
-    		d.userEndAngle = Math.PI*d.value/50;
-    	})
-    	.attr("d", drawArc)
-    	.attr("transform", function(d,i) {return "translate(" + (margin + (2*i+1)*circlewidth) + "," + centery + ")"})
-    	.attr("class", "userslice")
-    	.style("fill", "green");
+        .attr("d", backgroundArc)
+        .attr("transform", function(d,i) {return "translate(" + (margin + (2*i+1)*circlewidth) + "," + centery + ")"})
+        .attr("class", "backgroundcircle");
 
     sel.append("path")
-        .each(function(d,i) {
-    		d.nonuserStartAngle = Math.PI*d.value/50;
-    		d.nonuserEndAngle = 2*Math.PI;
+    	.each(function(d,i) {
+    		d.startAngle = 0;
+    		d.endAngle = Math.PI*d.value/50;
+            //This is just for making the first plot, starting 
+            console.log(d);
+
     	})
-    	.attr("d", drawArc)
+    	.attr("d", userArc)
     	.attr("transform", function(d,i) {return "translate(" + (margin + (2*i+1)*circlewidth) + "," + centery + ")"})
-    	.attr("class", "nonuserslice")
-    	.style("fill", "blue");
+    	.attr("class", "userslice");
+    
+    sel.append("text")
+        .attr("class","label")
+        .attr("x",function(d,i) { 
+            return margin + (2*i+1)*circlewidth;
+        })
+        .attr("y",function(d,i) { 
+            return centery - (radius + 10);
+        })
+        .attr("dy","0.3em")
+        .style("text-anchor","middle")
+        .text(function(d) { return d.type; });
+
+    // sel.append("text")
+    //     .attr("class","value")
+    //     .attr("x",function(d,i) { return margin + (2*i+1)*circlewidth;})
+    //     .attr("y",function(d,i) { return centery;})
+    //     .attr("dy","0.3em")
+    //     .style("text-anchor","middle")
+    //     .text(function(d) { return d.value + "%"; });
+
+    sel.append("text")
+        .attr("class","value")
+        .attr("x",function(d,i) { 
+            return margin + (2*i+1)*circlewidth + (radius+10) * Math.sin(d.endAngle/2);
+        })
+        .attr("y",function(d,i) { 
+            return centery - (radius+10)*Math.cos(d.endAngle/2);
+        })
+        .attr("dy","0.3em")
+        .style("text-anchor","left")
+        .text(function(d) { return d.value + "%"; });
 }
 
 function updateView(platform,category){
 	var data = getDataRows(platform,category);
 
-	var svg = d3.select("#viz");
+	var svg = d3.select("#vizq1");
 
 	 // get the size of the SVG element
     var height = svg.attr("height");
@@ -120,14 +193,16 @@ function updateView(platform,category){
     var colors = ['green', 'blue'];
     var circlewidth = chartWidth/(2*data.length);
 
-    var drawArc = d3.svg.arc()
+    var userArc = d3.svg.arc()
     	.innerRadius(radius/2)
     	.outerRadius(radius)
 
+    svg.select(".title")
+        .text("Platform: "+ platform);
+	
+    var sel = svg.selectAll("g")
 
-	var sel = svg.selectAll("g")
-
-	var arc = sel.select(".userslice")
+	sel.select(".userslice")
 		.each(function(d,i) {
 			//This is a little weird. We want to preserve
 			//the startangle and endangle information so
@@ -141,45 +216,22 @@ function updateView(platform,category){
 		.transition()
 		.duration(750)
 		.attrTween("d", function(d,i) {
-			var interpolate = d3.interpolate( d.userEndAngle, Math.PI*d.value/50 );
+			var interpolate = d3.interpolate( d.endAngle, Math.PI*d.value/50 );
 	        return function(t) {
 	            d.endAngle = interpolate(t);
 	            d.startAngle = 0;
-	            return drawArc(d);
+	            return userArc(d);
 	        };
 		})
-
-	var arc = sel.select(".nonuserslice")
-		.transition()
-		.duration(750)
-		.attrTween("d", function(d,i) {
-			var interpolate = d3.interpolate( d.nonuserStartAngle, Math.PI*d.value/50 );
-	        return function(t) {
-	            d.endAngle = 2*Math.PI;
-	            d.startAngle = interpolate(t);
-	            return drawArc(d);
-	        };
-		})
+    sel.select(".value")
+        .attr("x",function(d,i) { 
+            return margin + (2*i+1)*circlewidth + (radius+10)*Math.sin(Math.PI*d.value/100);
+        })
+        .attr("y",function(d) { 
+            return centery - (radius+10)*Math.cos(Math.PI*d.value/100);
+        })
+        .text(function(d) {return d.value + "%";})
 }
-
-
-
-// function arcTween(transition, arc, radius, newStartAngle, newFinishAngle) {
-//     transition.attrTween("d", function (d) {
-//         var interpolateStart = d3.interpolate(d.startAngle, newStartAngle);
-//         var interpolateEnd = d3.interpolate(d.endAngle, newFinishAngle);
-//         return function (t) {
-//             d.startAngle = interpolateStart(t);
-//             d.endAngle = interpolateEnd(t);
-//             d.innerRadius = radius/2;
-//             d.outerRadius = radius;
-//             return arc(d);
-//         };
-//     });
-// }
-
-
-
 
 /* From 
    http://www.pewinternet.org/files/2015/08/Social-Media-Update-2015-FINAL2.pdf
