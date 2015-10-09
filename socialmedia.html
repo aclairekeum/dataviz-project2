@@ -15,7 +15,7 @@
          .bar { 
              stroke: white;
              stroke-width: 2px;
-             fill: steelblue;
+             /*fill: steelblue;*/
          }
 
          .value {
@@ -60,6 +60,7 @@
       <button id="button_Environment">Environment</button>
       <button id="button_Living">Living</button>
       <button id="button_Income">Income</button>
+      <button id="button_Age">Age</button>
     </div>
 
     <script>
@@ -68,55 +69,27 @@ window.addEventListener("load",run);
 
 function run () {
 
+    initializeView ("Gender");
+
     button_Gender.addEventListener("click",function() { updateView("Gender"); });
     button_Race.addEventListener("click",function() { updateView("Race"); });
+    button_Age.addEventListener("click",function() { updateView("Age"); });
     button_Education.addEventListener("click",function() { updateView("Education"); });
     button_Environment.addEventListener("click",function() { updateView("Environment"); });
     button_Living.addEventListener("click",function() { updateView("Living"); });
     button_Income.addEventListener("click",function() { updateView("Income"); });
 
-    initializeView ("Gender");
+   
 }
 
 function initializeView(category){
-
-    platforms = ["Facebook","Instagram","Twitter","LinkedIn","Pinterest"];
-    var addRows = null;
-    platforms.forEach(function(platform){
-            addRows += getDataRows(platform,category);
-            numtype = getDataRows(platform[0],category).length;
-            });
-    
-    var color = d3.scale.linear()
-    .domain([0, n_layers - 1])
-    .range(["#aad", "#556"]);
-
-//TESTing
-    var data = getDataRows("Facebook","Gender");
-    color.domain(d3.keys(addRows[0]).filter(function (key) {
-        return key == "type";
-        }));
-
-    // var values = d3.layout.stack()(["Female","Male"])
-    //                     .map(function(type){
-    //                         return data.map(function(d) {
-    //                             return {x: d.platform, y: +d[type]};});});
-
-    var n_layers = numtype, // number of layers
-    n_bars = data.length*5; // number of samples per layer 5 platforms,
-
-    var color = d3.scale.linear()
-    .domain([0, n_layers - 1])
-    .range(["#aad", "#556"]);
-
-    // the namespace for creating SVG elements
+    var platforms = ["Facebook","Instagram","Twitter","LinkedIn","Pinterest"];
+    // SVG Stuff
     var svgns = "http://www.w3.org/2000/svg";
     var svg = d3.select("#viz");
-    // get the size of the SVG element
+    // Sizing
     var height = svg.attr("height");
     var width = svg.attr("width");
-
-    // the chart lives in the svg surrounded by a margin of 100px
     var margin = 50;
     var barmargin = 10;
     var chartHeight = height - 2*margin;
@@ -141,118 +114,81 @@ function initializeView(category){
         .orient("left")
         .tickFormat(d3.format(".2s"));
 
-    var barWidth = chartWidth/10
-    var barHeight = chartHeight/n_layers
-
     x.domain(platforms);
     y.domain([0, 100]);
 
-    var axisYtrans = height-2*margin+30;
-    var axisXtrans = 30;
-
-    svg.append("g")
-      .attr("class", "x axis")
-       .attr("transform", "translate(" + axisXtrans +","+ axisYtrans +")")
-      .call(xAxis);
-    svg.append("g")
-      .attr("class", "y axis")
-       .attr("transform", "translate(" + axisXtrans +","+ axisXtrans +")")
-      .call(yAxis)
-    .append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 6)
-      .attr("dy", ".101em")
-      .style("text-anchor", "end")
-      .text("percentage");
-
-       platform = svg.selectAll("platform")
-        .data(platforms)
-        .enter().append("g")
-        .attr("transform", function (d) {
-        return "translate(" + x(d) + ",0)";})
-
-        platform.append("rect")
-            .attr("class","bar")
-            .attr("x",function(d,i) { console.log(i);
-                return axisXtrans+barmargin+(i)*barWidth/8; })
-            .attr("y",axisYtrans)
-            .attr("width",barWidth)
-            .attr("height",10)
-        platform.append("rect")
-            .attr("class","bar")
-            .attr("x",function(d,i) { console.log(i);
-                return axisXtrans+barmargin+(i)*barWidth/8; })
-            .attr("y",axisYtrans+10)
-            .attr("width",barWidth)
-            .attr("height",20)
-            .fill("style", "blue");
-        
-        //label each bar graph
-        platform.append("text")
-        .attr("class","value")
-        .attr("x",function(d,i) {return barmargin+(i*2)*barWidth+barWidth/2; })
-        .attr("y",height-margin-20)
+    svg.append("text")
+        .attr("class","title")
+        .attr("x",width/2)
+        .attr("y",margin/2)
         .attr("dy","0.3em")
-        .style("text-anchor","middle");
+        .style("text-anchor","middle")
+        .text ("Comparison of " + category +" Percentage Difference across the platform");
+
+    platforms.forEach(function(platform,i){
+            var type_len = getDataRows(platform,category).length;
+            var barWidth = (chartWidth/(5*(type_len+1)-1))-barmargin;
+            InitBars(platform, category, height, margin, chartHeight, barWidth, barmargin, i)
+        });
+    }
+
+    function InitBars(platform, category, height, margin, chartHeight, barWidth, barmargin, order){
+        var svg = d3.select("#viz");
+        var thisData = getDataRows(platform, category);
+        var platformgroup = svg.append("g")
+        .attr("class",platform);
+        
+        var color = d3.scale.linear()
+        .domain([0, thisData.length - 1])
+        .range(["#aad", "#556"]);
+
+        var sel = platformgroup.selectAll("g")
+        .data(thisData)
+        .enter().append("g");
+
+        sel.append("rect")
+            .attr("class","bar")
+            .attr("x",function(v,i){
+                return order*(thisData.length+1)*(barmargin+barWidth)+i*(barmargin+barWidth);})
+            .attr("y", function(d) {return height-margin-(chartHeight*d.value/100);})
+            .attr("width",barWidth)
+            .attr("height",function(d) { return chartHeight*d.value/100; })
+            .attr("fill",function(d,i){return color(i)})
+    }
+
+    function updateBars(platform, category, height, margin, chartHeight){
+        var svg = d3.select("#viz");
+        var thisData = getDataRows(platform, category);
+
+        platformgroup = svg.selectAll("g");
+        platformgroup.select(".bar")
+        .transition()
+        .duration(1000)
+        .attr("y",function(d) {return height-margin-(chartHeight*d.value/100); })
+        .attr("height",function(d) { return chartHeight*d.value/100; });
     }
 
     function updateView(category){
-
-        var data = getDataRows(category);
-        var svg = d3.selet("#viz");
-    }
-    // sel.append("text")
-    // .attr("class","label")
-    // .attr("x",function(d,i) { return margin+(i*2)*barWidth+barWidth/2; })
-    // .attr("y",margin+chartHeight+50)
-    // .attr("dy","0.3em")
-    // .style("text-anchor","middle")
-    // .text(function(d) { return d.group; });
-
-    // Get the outer radius of each donut
-    // var listPlatform = ["Facebook", "Pinterest","Instagram","LinkedIn","Twitter"]
-    // var total_data = getDataRows("Facebook", "Total");
-    // total_data[0].value
-
-    // var x= d3.scale.linear().range([0,width-6*margin]);
-    // var y= d3.scale.linear().range([0,height-2*margin]);
+    var platforms = ["Facebook","Instagram","Twitter","LinkedIn","Pinterest"];
+    var svg = d3.select("#viz");
     
-    // // if (())
-    // if ((chartWidth/data.length - margin/2) < chartHeight) {
-    //     radius = chartWidth/(2*data.length) - margin/2;
-    // }
-    // else {
-    //     radius = chartHeight/2;
-    // }
-    // var centery = margin + chartHeight/2;
+    // Sizing
+    var height = svg.attr("height");
+    var width = svg.attr("width");
+    var margin = 50;
+    var barmargin = 10;
+    var chartHeight = height - 2*margin;
+    var chartWidth = width - 2*margin;
 
-    // data.forEach(function(v,i){
-    //     // var 
-    //     var centerx = margin + (2*i + 1)*chartWidth/(2*data.length);
-    //     var users = d3.svg.arc()
-    //         .innerRadius(radius/2)
-    //         .outerRadius(radius)
-    //         .startAngle(0)
-    //         .endAngle(v.value/100*2*Math.PI);
+    // update the title
+    svg.select(".title")
+    .text ("Comparison of " + category +" Percentage Difference across the platform");
+    
+    platforms.forEach(function(platform,i){
+            updateBars(platform, category, height, margin, chartHeight)
+    }); 
 
-    //     svg.append("path")
-    //         .attr("d", users)
-    //         .attr("transform", "translate(" + centerx + "," + centery + ")")
-    //         .style("fill", "green");
-
-    //     var nonusers = d3.svg.arc()
-    //         .innerRadius(radius/2)
-    //         .outerRadius(radius)
-    //         .startAngle(v.value/100*2*Math.PI)
-    //         .endAngle(2*Math.PI);
-
-    //     svg.append("path")
-    //         .attr("d", nonusers)
-    //         .attr("transform", "translate(" + centerx + "," + centery + ")")
-    //         .style("fill", "blue");
-
-
-    // });
+    }
 
 
 /* From 
