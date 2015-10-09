@@ -34,7 +34,7 @@
   
   <body>
     
-    <svg id="vizq1" height="500" width="800" style="border: 1px solid grey;">
+    <svg id="vizq1" height="1500" width="800" style="border: 1px solid grey;">
     </svg>
 
     <div>
@@ -51,18 +51,17 @@
 window.addEventListener("load",run);
 
 function run () {
-	initializeView("Facebook", "Gender");
+    var demographicCategories = ["Total", "Gender", "Race", "Age", "Education", "Income", "Living"];
+	initializeView("Facebook", demographicCategories);
 
-   button_Facebook.addEventListener("click",function() { updateView("Facebook", "Gender"); });
-    button_Pinterest.addEventListener("click",function() { updateView("Pinterest", "Gender"); });
-    button_Instagram.addEventListener("click",function() { updateView("Instagram", "Gender"); });
-    button_LinkedIn.addEventListener("click",function() { updateView("LinkedIn", "Gender"); });
-    button_Twitter.addEventListener("click",function() { updateView("Twitter", "Gender"); });
+   button_Facebook.addEventListener("click",function() { updateView("Facebook", demographicCategories); });
+    button_Pinterest.addEventListener("click",function() { updateView("Pinterest", demographicCategories); });
+    button_Instagram.addEventListener("click",function() { updateView("Instagram", demographicCategories); });
+    button_LinkedIn.addEventListener("click",function() { updateView("LinkedIn", demographicCategories); });
+    button_Twitter.addEventListener("click",function() { updateView("Twitter", demographicCategories); });
 }
 
-function initializeView(platform,category){
-	var d = getDataRows(platform,category);
-
+function initializeView(platform, demographicCategories){
     var svg = d3.select("#vizq1");
 
     // get the size of the SVG element
@@ -74,20 +73,8 @@ function initializeView(platform,category){
 
     // the chart lives in the svg surrounded by a margin of 100px
     var margin = 50;
-    var chartHeight = height - 2*margin;
+    var chartHeight = (height - (demographicCategories.length+1)*margin)/demographicCategories.length;
     var chartWidth = width - 2*margin;
-
-    // Get the outer radius of each donut
-    var radius = 0;
-    if ((chartWidth/d.length - margin/2) < chartHeight) {
-    	radius = chartWidth/(2*d.length) - margin/2;
-    }
-    else {
-    	radius = chartHeight/2;
-    }
-    var centery = margin + chartHeight/2;
- 
-    var circlewidth = chartWidth/(2*d.length);
 
     svg.append("text")
         .attr("class","title")
@@ -97,9 +84,37 @@ function initializeView(platform,category){
         .style("text-anchor","middle")
         .text ("Platform: " + platform);
 
+    demographicCategories.forEach(function(category,i) {
+        var yoffset = (chartHeight+margin)*(i);
+        console.log(category);
+        initializeDemographicView(platform,category,margin,yoffset,chartWidth,chartHeight,svg);
+    });
+
+}
+
+function initializeDemographicView(platform,category,margin,yoffset, chartWidth, chartHeight, svg){
+    
+    var d = getDataRows(platform,category);
+    console.log(d);
+
+    // the namespace for creating SVG elements
+    var svgns = "http://www.w3.org/2000/svg";
+
+    // Get the outer radius of each donut
+    var radius = 0;
+    if ((chartWidth/d.length - margin/2) < chartHeight) {
+        radius = chartWidth/(2*d.length) - margin/2;
+    }
+    else {
+        radius = chartHeight/2;
+    }
+    var centery = yoffset + margin + chartHeight/2;
+ 
+    var sectionWidth = chartWidth/(2*d.length);
+
     var userArc = d3.svg.arc()
-    	.innerRadius(radius/2)
-    	.outerRadius(radius);
+        .innerRadius(radius/2)
+        .outerRadius(radius);
 
     var backgroundArc = d3.svg.arc()
         .innerRadius(16*radius/30)
@@ -107,33 +122,45 @@ function initializeView(platform,category){
         .startAngle(0)
         .endAngle(2*Math.PI);
 
-    var sel = svg.selectAll("g")
-    	.data(d)
-    	.enter()
-    	.append("g");
+    var userArc = d3.svg.arc()
+        .innerRadius(radius/2)
+        .outerRadius(radius);
+
+    var backgroundArc = d3.svg.arc()
+        .innerRadius(16*radius/30)
+        .outerRadius(29*radius/30)
+        .startAngle(0)
+        .endAngle(2*Math.PI);
+
+    var demographicGroup = svg.append("g")
+        .attr("class", category);
+
+    var sel = demographicGroup.selectAll("g")
+        .data(d)
+        .enter()
+        .append("g");
 
     //Draw all the background circles
     sel.append("path")
         .attr("d", backgroundArc)
-        .attr("transform", function(d,i) {return "translate(" + (margin + (2*i+1)*circlewidth) + "," + centery + ")"})
+        .attr("transform", function(d,i) {
+            console.log(margin + (2*i+1)*sectionWidth);
+            return "translate(" + (margin + (2*i+1)*sectionWidth) + "," + centery + ")";})
         .attr("class", "backgroundcircle");
 
     sel.append("path")
-    	.each(function(d,i) {
-    		d.startAngle = 0;
-    		d.endAngle = Math.PI*d.value/50;
-            //This is just for making the first plot, starting 
-            console.log(d);
-
-    	})
-    	.attr("d", userArc)
-    	.attr("transform", function(d,i) {return "translate(" + (margin + (2*i+1)*circlewidth) + "," + centery + ")"})
-    	.attr("class", "userslice");
+        .each(function(d,i) {
+            d.startAngle = 0;
+            d.endAngle = Math.PI*d.value/50;
+        })
+        .attr("d", userArc)
+        .attr("transform", function(d,i) {return "translate(" + (margin + (2*i+1)*sectionWidth) + "," + centery + ")"})
+        .attr("class", "userslice");
     
     sel.append("text")
         .attr("class","label")
         .attr("x",function(d,i) { 
-            return margin + (2*i+1)*circlewidth;
+            return margin + (2*i+1)*sectionWidth;
         })
         .attr("y",function(d,i) { 
             return centery - (radius + 10);
@@ -142,18 +169,10 @@ function initializeView(platform,category){
         .style("text-anchor","middle")
         .text(function(d) { return d.type; });
 
-    // sel.append("text")
-    //     .attr("class","value")
-    //     .attr("x",function(d,i) { return margin + (2*i+1)*circlewidth;})
-    //     .attr("y",function(d,i) { return centery;})
-    //     .attr("dy","0.3em")
-    //     .style("text-anchor","middle")
-    //     .text(function(d) { return d.value + "%"; });
-
     sel.append("text")
         .attr("class","value")
         .attr("x",function(d,i) { 
-            return margin + (2*i+1)*circlewidth + (radius+10) * Math.sin(d.endAngle/2);
+            return margin + (2*i+1)*sectionWidth + (radius+10) * Math.sin(d.endAngle/2);
         })
         .attr("y",function(d,i) { 
             return centery - (radius+10)*Math.cos(d.endAngle/2);
@@ -163,8 +182,7 @@ function initializeView(platform,category){
         .text(function(d) { return d.value + "%"; });
 }
 
-function updateView(platform,category){
-	var data = getDataRows(platform,category);
+function updateView(platform,demographicCategories){
 
 	var svg = d3.select("#vizq1");
 
@@ -177,55 +195,88 @@ function updateView(platform,category){
 
     // the chart lives in the svg surrounded by a margin of 100px
     var margin = 50;
-    var chartHeight = height - 2*margin;
+    var chartHeight = (height - (demographicCategories.length+1)*margin)/demographicCategories.length;
     var chartWidth = width - 2*margin;
+
+    svg.select(".title")
+        .text("Platform: "+ platform);
+
+    demographicCategories.forEach(function(category,i) {
+        var yoffset = (chartHeight+margin)*(i);
+        console.log(category);
+        updateDemographicView(platform,category,margin,yoffset,chartWidth,chartHeight,svg);
+    });
+
+}
+
+function updateDemographicView(platform,category,margin,yoffset, chartWidth, chartHeight, svg){
+
+    var data = getDataRows(platform,category);
+    console.log(data);
+
+    // the namespace for creating SVG elements
+    var svgns = "http://www.w3.org/2000/svg";
 
     // Get the outer radius of each donut
     var radius = 0;
     if ((chartWidth/data.length - margin/2) < chartHeight) {
-    	radius = chartWidth/(2*data.length) - margin/2;
+        radius = chartWidth/(2*data.length) - margin/2;
     }
     else {
-    	radius = chartHeight/2;
+        radius = chartHeight/2;
     }
-    var centery = margin + chartHeight/2;
-    
-    var colors = ['green', 'blue'];
-    var circlewidth = chartWidth/(2*data.length);
+    var centery = yoffset + margin + chartHeight/2;
+ 
+    var sectionWidth = chartWidth/(2*data.length);
 
     var userArc = d3.svg.arc()
-    	.innerRadius(radius/2)
-    	.outerRadius(radius)
+        .innerRadius(radius/2)
+        .outerRadius(radius);
 
-    svg.select(".title")
-        .text("Platform: "+ platform);
-	
-    var sel = svg.selectAll("g")
+    var backgroundArc = d3.svg.arc()
+        .innerRadius(16*radius/30)
+        .outerRadius(29*radius/30)
+        .startAngle(0)
+        .endAngle(2*Math.PI);
 
-	sel.select(".userslice")
-		.each(function(d,i) {
-			//This is a little weird. We want to preserve
-			//the startangle and endangle information so
-			//we can't override the data. We do, however, 
-			//want to be able to update the arc, so we do 
-			//need to change the platform and the value. 
-			//Is there a better way to do this?
-			d.platform = data[i].platform;
-			d.value = data[i].value
-    	})
-		.transition()
-		.duration(750)
-		.attrTween("d", function(d,i) {
-			var interpolate = d3.interpolate( d.endAngle, Math.PI*d.value/50 );
-	        return function(t) {
-	            d.endAngle = interpolate(t);
-	            d.startAngle = 0;
-	            return userArc(d);
-	        };
-		})
+    var userArc = d3.svg.arc()
+        .innerRadius(radius/2)
+        .outerRadius(radius);
+
+    var backgroundArc = d3.svg.arc()
+        .innerRadius(16*radius/30)
+        .outerRadius(29*radius/30)
+        .startAngle(0)
+        .endAngle(2*Math.PI);
+
+    var demographicGroup = svg.select("."+ category);
+
+    var sel = demographicGroup.selectAll("g");
+
+    sel.select(".userslice")
+        .each(function(d,i) {
+            //This is a little weird. We want to preserve
+            //the startangle and endangle information so
+            //we can't override the data. We do, however, 
+            //want to be able to update the arc, so we do 
+            //need to change the platform and the value. 
+            //Is there a better way to do this?
+            d.platform = data[i].platform;
+            d.value = data[i].value
+        })
+        .transition()
+        .duration(750)
+        .attrTween("d", function(d,i) {
+            var interpolate = d3.interpolate( d.endAngle, Math.PI*d.value/50 );
+            return function(t) {
+                d.endAngle = interpolate(t);
+                d.startAngle = 0;
+                return userArc(d);
+            };
+        })
     sel.select(".value")
         .attr("x",function(d,i) { 
-            return margin + (2*i+1)*circlewidth + (radius+10)*Math.sin(Math.PI*d.value/100);
+            return margin + (2*i+1)*sectionWidth + (radius+10)*Math.sin(Math.PI*d.value/100);
         })
         .attr("y",function(d) { 
             return centery - (radius+10)*Math.cos(Math.PI*d.value/100);
