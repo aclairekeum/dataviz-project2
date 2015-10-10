@@ -7,6 +7,9 @@
     <title>Data Viz Project 2</title>
     <!-- load D3 library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
      <style>
          text {
             font-family: sans-serif;
@@ -15,7 +18,6 @@
          .bar { 
              stroke: white;
              stroke-width: 2px;
-             /*fill: steelblue;*/
          }
 
          .value {
@@ -45,78 +47,62 @@
           shape-rendering: crispEdges;
         }
 
+        svg#viz {
+            margin-left:50px;
+            margin-right: 50px;
+            /*text-align: center;*/
+        }
+
     </style>
   </head>
   
   <body>
     
+    <div class= "buttons">
+      <button type="button" class="btn btn-primary" id="button_Gender">Gender</button>
+      <button type="button" class="btn btn-primary"id="button_Race">Race</button>
+      <button type="button" class="btn btn-primary"id="button_Education">Education</button>
+      <button type="button" class="btn btn-primary"id="button_Employment">Employment</button>
+      <button type="button" class="btn btn-primary"id="button_Living">Living</button>
+      <button type="button" class="btn btn-primary"id="button_Income">Income</button>
+      <button type="button" class="btn btn-primary"id="button_Age">Age</button>
+    </div>
+
     <svg id="viz" height="600" width="800">
     </svg>
 
-     <div>
-      <button id="button_Gender">Gender</button>
-      <button id="button_Race">Race</button>
-      <button id="button_Education">Education</button>
-      <button id="button_Environment">Environment</button>
-      <button id="button_Living">Living</button>
-      <button id="button_Income">Income</button>
-      <button id="button_Age">Age</button>
-    </div>
+     
 
     <script>
       
 window.addEventListener("load",run);
 
 function run () {
+    //initialize the template
+    initializeTemplate();
 
-    initializeView ("Gender");
-
-    button_Gender.addEventListener("click",function() { updateView("Gender"); });
-    button_Race.addEventListener("click",function() { updateView("Race"); });
-    button_Age.addEventListener("click",function() { updateView("Age"); });
-    button_Education.addEventListener("click",function() { updateView("Education"); });
-    button_Environment.addEventListener("click",function() { updateView("Environment"); });
-    button_Living.addEventListener("click",function() { updateView("Living"); });
-    button_Income.addEventListener("click",function() { updateView("Income"); });
-
-   
+    //assign the button events
+    button_Gender.addEventListener("click",function() { updateCategory("Gender");});
+    button_Race.addEventListener("click",function() {updateCategory("Race"); });
+    button_Age.addEventListener("click",function() { updateCategory("Age"); });
+    button_Education.addEventListener("click",function() {updateCategory("Education"); });
+    button_Employment.addEventListener("click",function() { updateCategory("Employment"); });
+    button_Living.addEventListener("click",function() { updateCategory("Living"); });
+    button_Income.addEventListener("click",function() { updateCategory("Income"); });  
 }
 
-function initializeView(category){
-    var platforms = ["Facebook","Instagram","Twitter","LinkedIn","Pinterest"];
-    // SVG Stuff
+function initializeTemplate(){
+    //SVG import
     var svgns = "http://www.w3.org/2000/svg";
     var svg = d3.select("#viz");
+
     // Sizing
     var height = svg.attr("height");
     var width = svg.attr("width");
     var margin = 50;
-    var barmargin = 10;
-    var chartHeight = height - 2*margin;
-    var chartWidth = width - 2*margin;
 
-    // Our X scale
-    var x = d3.scale.ordinal()
-        .rangeRoundBands([0, chartWidth], .1);
-
-    // Our Y scale
-    var y = d3.scale.linear()
-        .rangeRound([chartHeight, 0]);
-
-    // Use our X scale to set a bottom axis
-    var xAxis = d3.svg.axis()
-        .scale(x)
-        .orient("bottom");
-
-    // Same for our left axis
-    var yAxis = d3.svg.axis()
-        .scale(y)
-        .orient("left")
-        .tickFormat(d3.format(".2s"));
-
-    x.domain(platforms);
-    y.domain([0, 100]);
-
+    //Set a default title
+    var category = "";
     svg.append("text")
         .attr("class","title")
         .attr("x",width/2)
@@ -125,68 +111,90 @@ function initializeView(category){
         .style("text-anchor","middle")
         .text ("Comparison of " + category +" Percentage Difference across the platform");
 
+    //Platform group creation
+    var platforms = ["Facebook","Instagram","Twitter","LinkedIn","Pinterest"];
     platforms.forEach(function(platform,i){
-            var type_len = getDataRows(platform,category).length;
-            var barWidth = (chartWidth/(5*(type_len+1)-1))-barmargin;
-            InitBars(platform, category, height, margin, chartHeight, barWidth, barmargin, i)
+            svg.append("g")
+            .attr("class",platform);
+
+            svg.selectAll("g")
+            .append("text")
+            .attr("x",margin+150*i)
+            .attr("y",height-margin+30)
+            .style("text-anchor","middle")
+            .text(platform);
+
+        });
+    
+    }
+
+    function updateCategory(category){
+        var platforms = ["Facebook","Instagram","Twitter","LinkedIn","Pinterest"];
+        var svg = d3.select("#viz");
+        var height = svg.attr("height");
+        var width = svg.attr("width");
+        var margin = 50;
+
+        var chartHeight = height - 2*margin;
+        var chartWidth = width - 2*margin;
+        var barmargin = 10;
+
+        // update the title
+        svg.select(".title")
+        .text ("Comparison of " + category +" Percentage Difference across the platform");
+        
+        //remove all the bars before appending any.
+        svg.selectAll(".bar").remove();
+        svg.selectAll(".label").remove();
+        //update the bar grpahs
+        platforms.forEach(function(platform,i){
+            updateBars(platform, category, margin, chartWidth, chartHeight, barmargin, i)
         });
     }
 
-    function InitBars(platform, category, height, margin, chartHeight, barWidth, barmargin, order){
+    function updateBars(platform, category, margin, chartWidth, chartHeight, barmargin, order){
         var svg = d3.select("#viz");
+        var height = svg.attr("height")
         var thisData = getDataRows(platform, category);
-        var platformgroup = svg.append("g")
-        .attr("class",platform);
-        
+        var type_len = thisData.length;
+        var barWidth = (chartWidth/(5*(type_len+1)-1))-barmargin;
+
+        //color scheme different for each type
         var color = d3.scale.linear()
         .domain([0, thisData.length - 1])
-        .range(["#aad", "#556"]);
+        .range(["#AB374B", "#5D37AB"]);
 
-        var sel = platformgroup.selectAll("g")
-        .data(thisData)
-        .enter().append("g");
+        ////append each data to a group within a platform
+        var platformgroup = svg.selectAll(".g");
+        var sel = platformgroup.data(thisData).enter().append("g");
 
+        //append a rect for each group.
         sel.append("rect")
             .attr("class","bar")
             .attr("x",function(v,i){
                 return order*(thisData.length+1)*(barmargin+barWidth)+i*(barmargin+barWidth);})
-            .attr("y", function(d) {return height-margin-(chartHeight*d.value/100);})
+            .attr("y", height-margin)
             .attr("width",barWidth)
+            .attr("height", 0)
+        //give a transition event
+            .transition()
+            .duration(2000)
+            .attr("y",function(d) {return height-margin-(chartHeight*d.value/100); })
             .attr("height",function(d) { return chartHeight*d.value/100; })
-            .attr("fill",function(d,i){return color(i)})
-    }
+            .attr("fill",function(d,i){return color(i)});
 
-    function updateBars(platform, category, height, margin, chartHeight){
-        var svg = d3.select("#viz");
-        var thisData = getDataRows(platform, category);
-
-        platformgroup = svg.selectAll("g");
-        platformgroup.select(".bar")
-        .transition()
-        .duration(1000)
-        .attr("y",function(d) {return height-margin-(chartHeight*d.value/100); })
-        .attr("height",function(d) { return chartHeight*d.value/100; });
-    }
-
-    function updateView(category){
-    var platforms = ["Facebook","Instagram","Twitter","LinkedIn","Pinterest"];
-    var svg = d3.select("#viz");
-    
-    // Sizing
-    var height = svg.attr("height");
-    var width = svg.attr("width");
-    var margin = 50;
-    var barmargin = 10;
-    var chartHeight = height - 2*margin;
-    var chartWidth = width - 2*margin;
-
-    // update the title
-    svg.select(".title")
-    .text ("Comparison of " + category +" Percentage Difference across the platform");
-    
-    platforms.forEach(function(platform,i){
-            updateBars(platform, category, height, margin, chartHeight)
-    }); 
+        //add the values for each data point
+         sel.append("text")
+            .attr("class","label")
+            .attr("x",function(v,i){
+                return order*(thisData.length+1)*(barmargin+barWidth)+i*(barmargin+barWidth);})
+            .attr("y", height-margin)
+            .style("font-size", "12px")
+            .attr("fill","white")
+            .text(function(d){return d.value;})
+            .transition()
+            .duration(2050)
+            .attr("y",function(d) {return height-margin-(chartHeight*d.value/100)+20; });
 
     }
 
