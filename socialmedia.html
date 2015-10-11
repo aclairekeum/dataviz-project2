@@ -16,6 +16,17 @@
     text {
         font-family: sans-serif;
      }
+
+    .title {
+        font-size: 40px;
+    }
+    .charttitle {
+        font-size: 25px;
+    }
+
+    .label{
+        font-size: 20px;
+    }
     .userslice { 
          stroke: white;
          stroke-width: 2px;
@@ -34,7 +45,7 @@
   
   <body>
     
-    <svg id="vizq1" height="1500" width="800" style="border: 1px solid grey;">
+    <svg id="vizq1" height="1600" width="1000" style="border: 1px solid grey;">
     </svg>
 
     <div>
@@ -51,7 +62,7 @@
 window.addEventListener("load",run);
 
 function run () {
-    var demographicCategories = ["Total", "Gender", "Race", "Age", "Education", "Income", "Living"];
+    var demographicCategories = ["Total", "Gender", "Race", "Age", "Education", "Income", "Living Environment", "Employment Status"];
 	initializeView("Facebook", demographicCategories);
 
    button_Facebook.addEventListener("click",function() { updateView("Facebook", demographicCategories); });
@@ -72,8 +83,9 @@ function initializeView(platform, demographicCategories){
     var svgns = "http://www.w3.org/2000/svg";
 
     // the chart lives in the svg surrounded by a margin of 100px
-    var margin = 50;
-    var chartHeight = (height - (demographicCategories.length+1)*margin)/demographicCategories.length;
+    var margin = 100;
+    var innerMargin = margin/10;
+    var chartHeight = (height - 2*margin -(demographicCategories.length-1)*innerMargin)/demographicCategories.length;
     var chartWidth = width - 2*margin;
 
     svg.append("text")
@@ -82,33 +94,37 @@ function initializeView(platform, demographicCategories){
         .attr("y",margin/2)
         .attr("dy","0.3em")
         .style("text-anchor","middle")
-        .text ("Platform: " + platform);
+        .text ("The Demographics of " + platform);
 
     demographicCategories.forEach(function(category,i) {
-        var yoffset = (chartHeight+margin)*(i);
+        var yoffset = margin + (chartHeight+innerMargin)*(i);
         console.log(category);
-        initializeDemographicView(platform,category,margin,yoffset,chartWidth,chartHeight,svg);
+        initializeDemographicView(platform,category,margin, 20, yoffset,chartWidth,chartHeight,svg);
     });
 
 }
 
-function initializeDemographicView(platform,category,margin,yoffset, chartWidth, chartHeight, svg){
+function initializeDemographicView(platform,category,xmargin, ymargin, yoffset, chartWidth, chartHeight, svg){
+    if (platform != 'LinkedIn' && category === 'Employment Status'){
+        var d = getDataRows('LinkedIn',category);
+    }
+    else {
+        var d = getDataRows(platform,category);
+    }
     
-    var d = getDataRows(platform,category);
-    console.log(d);
-
+ 
     // the namespace for creating SVG elements
     var svgns = "http://www.w3.org/2000/svg";
 
     // Get the outer radius of each donut
     var radius = 0;
-    if ((chartWidth/d.length - margin/2) < chartHeight) {
-        radius = chartWidth/(2*d.length) - margin/2;
+    if ((chartWidth/d.length - xmargin/2) < chartHeight) {
+        radius = chartWidth/(2*d.length) - xmargin/2;
     }
     else {
-        radius = chartHeight/2;
+        radius = chartHeight/2 - 2*ymargin;
     }
-    var centery = yoffset + margin + chartHeight/2;
+    var centery = yoffset + chartHeight/2 + ymargin;
  
     var sectionWidth = chartWidth/(2*d.length);
 
@@ -132,20 +148,48 @@ function initializeDemographicView(platform,category,margin,yoffset, chartWidth,
         .startAngle(0)
         .endAngle(2*Math.PI);
 
+    var opacity = 1;
+    if (category === "Employment Status" && platform != "LinkedIn"){
+        opacity = 0;
+    }
+
     var demographicGroup = svg.append("g")
-        .attr("class", category);
+        .attr("class", category.replace(/\s/g, ''))
+        .style("opacity", opacity);
+
+    //Draw a background rectangle to contain the chart
+    demographicGroup.append("rect")
+        .attr("x", xmargin)
+        .attr("y", yoffset)
+        .attr("width", chartWidth)
+        .attr("height", chartHeight)
+        .attr("stroke", "black")
+        .attr("stroke-width", "2px")
+        .style("fill", "white");
+
+    //Also, title each individual chart
+    demographicGroup.append("text")
+        .attr("class","charttitle")
+        .attr("x", xmargin + chartWidth/2)
+        .attr("y", yoffset+15)
+        .style("text-anchor", "middle")
+        .attr("dy","0.3em")
+        .text("Internet Users on " + platform + " Broken Down by " + category);
 
     var sel = demographicGroup.selectAll("g")
         .data(d)
         .enter()
         .append("g");
 
+    
+
+
     //Draw all the background circles
     sel.append("path")
         .attr("d", backgroundArc)
         .attr("transform", function(d,i) {
-            console.log(margin + (2*i+1)*sectionWidth);
-            return "translate(" + (margin + (2*i+1)*sectionWidth) + "," + centery + ")";})
+            console.log(xmargin + (2*i+1)*sectionWidth);
+            return "translate(" + (xmargin + (2*i+1)*sectionWidth) + "," + centery + ")";})
         .attr("class", "backgroundcircle");
 
     sel.append("path")
@@ -154,16 +198,16 @@ function initializeDemographicView(platform,category,margin,yoffset, chartWidth,
             d.endAngle = Math.PI*d.value/50;
         })
         .attr("d", userArc)
-        .attr("transform", function(d,i) {return "translate(" + (margin + (2*i+1)*sectionWidth) + "," + centery + ")"})
+        .attr("transform", function(d,i) {return "translate(" + (xmargin + (2*i+1)*sectionWidth) + "," + centery + ")"})
         .attr("class", "userslice");
     
     sel.append("text")
         .attr("class","label")
         .attr("x",function(d,i) { 
-            return margin + (2*i+1)*sectionWidth;
+            return xmargin + (2*i+1)*sectionWidth;
         })
         .attr("y",function(d,i) { 
-            return centery - (radius + 10);
+            return centery - (radius + 20);
         })
         .attr("dy","0.3em")
         .style("text-anchor","middle")
@@ -172,13 +216,11 @@ function initializeDemographicView(platform,category,margin,yoffset, chartWidth,
     sel.append("text")
         .attr("class","value")
         .attr("x",function(d,i) { 
-            return margin + (2*i+1)*sectionWidth + (radius+10) * Math.sin(d.endAngle/2);
+            return xmargin + (2*i+1)*sectionWidth;
         })
-        .attr("y",function(d,i) { 
-            return centery - (radius+10)*Math.cos(d.endAngle/2);
-        })
+        .attr("y",centery)
         .attr("dy","0.3em")
-        .style("text-anchor","left")
+        .style("text-anchor","middle")
         .text(function(d) { return d.value + "%"; });
 }
 
@@ -194,22 +236,24 @@ function updateView(platform,demographicCategories){
     var svgns = "http://www.w3.org/2000/svg";
 
     // the chart lives in the svg surrounded by a margin of 100px
-    var margin = 50;
-    var chartHeight = (height - (demographicCategories.length+1)*margin)/demographicCategories.length;
+    //This is the outer margin. The margins in between plots will be half of the outer margin. 
+    var margin = 100;
+    var innerMargin = margin/10;
+    var chartHeight = (height - 2*margin -(demographicCategories.length-1)*innerMargin)/demographicCategories.length;
     var chartWidth = width - 2*margin;
 
     svg.select(".title")
-        .text("Platform: "+ platform);
+        .text("The Demographics of "+ platform);
 
     demographicCategories.forEach(function(category,i) {
-        var yoffset = (chartHeight+margin)*(i);
+        var yoffset =  margin + (chartHeight+innerMargin)*(i);
         console.log(category);
-        updateDemographicView(platform,category,margin,yoffset,chartWidth,chartHeight,svg);
+        updateDemographicView(platform,category,margin,20,yoffset,chartWidth,chartHeight,svg);
     });
 
 }
 
-function updateDemographicView(platform,category,margin,yoffset, chartWidth, chartHeight, svg){
+function updateDemographicView(platform,category,xmargin,ymargin,yoffset, chartWidth, chartHeight, svg){
 
     var data = getDataRows(platform,category);
     console.log(data);
@@ -218,14 +262,14 @@ function updateDemographicView(platform,category,margin,yoffset, chartWidth, cha
     var svgns = "http://www.w3.org/2000/svg";
 
     // Get the outer radius of each donut
-    var radius = 0;
-    if ((chartWidth/data.length - margin/2) < chartHeight) {
-        radius = chartWidth/(2*data.length) - margin/2;
+  var radius = 0;
+    if ((chartWidth/data.length - xmargin/2) < chartHeight) {
+        radius = chartWidth/(2*data.length) - xmargin/2;
     }
     else {
-        radius = chartHeight/2;
+        radius = chartHeight/2 - 2*ymargin;
     }
-    var centery = yoffset + margin + chartHeight/2;
+    var centery = yoffset + chartHeight/2 + ymargin;
  
     var sectionWidth = chartWidth/(2*data.length);
 
@@ -249,7 +293,17 @@ function updateDemographicView(platform,category,margin,yoffset, chartWidth, cha
         .startAngle(0)
         .endAngle(2*Math.PI);
 
-    var demographicGroup = svg.select("."+ category);
+    var opacity = 1;
+    if (category === "Employment Status" && platform != "LinkedIn"){
+        opacity = 0;
+    }
+
+    var demographicGroup = svg.select("."+ category.replace(/\s/g, ''));
+
+    demographicGroup.style("opacity", opacity);
+
+    demographicGroup.select(".charttitle")
+        .text("Internet Users on " + platform + " Broken Down by " + category);
 
     var sel = demographicGroup.selectAll("g");
 
@@ -275,13 +329,8 @@ function updateDemographicView(platform,category,margin,yoffset, chartWidth, cha
             };
         })
     sel.select(".value")
-        .attr("x",function(d,i) { 
-            return margin + (2*i+1)*sectionWidth + (radius+10)*Math.sin(Math.PI*d.value/100);
-        })
-        .attr("y",function(d) { 
-            return centery - (radius+10)*Math.cos(Math.PI*d.value/100);
-        })
         .text(function(d) {return d.value + "%";})
+
 }
 
 /* From 
@@ -308,9 +357,9 @@ function getDataRows (platform,category) {
     { platform: "Facebook", category: "Income", type: "30000-49999", value: "72"},
     { platform: "Facebook", category: "Income", type: "50000-74999", value: "66"},
     { platform: "Facebook", category: "Income", type: "More than 75000", value: "78"},
-    { platform: "Facebook", category: "Living", type: "Urban", value: "74"},
-    { platform: "Facebook", category: "Living", type: "Suburban", value: "72"},
-    { platform: "Facebook", category: "Living", type: "Rural", value: "67"},
+    { platform: "Facebook", category: "Living Environment", type: "Urban", value: "74"},
+    { platform: "Facebook", category: "Living Environment", type: "Suburban", value: "72"},
+    { platform: "Facebook", category: "Living Environment", type: "Rural", value: "67"},
 
     { platform: "Pinterest", category: "Total", type: "Total", value: "31"},
     { platform: "Pinterest", category: "Gender", type: "Men", value: "16"},
@@ -329,9 +378,9 @@ function getDataRows (platform,category) {
     { platform: "Pinterest", category: "Income", type: "30000-49999", value: "37"},
     { platform: "Pinterest", category: "Income", type: "50000-74999", value: "41"},
     { platform: "Pinterest", category: "Income", type: "More than 75000", value: "30"},
-    { platform: "Pinterest", category: "Living", type: "Urban", value: "26"},
-    { platform: "Pinterest", category: "Living", type: "Suburban", value: "34"},
-    { platform: "Pinterest", category: "Living", type: "Rural", value: "31"},
+    { platform: "Pinterest", category: "Living Environment", type: "Urban", value: "26"},
+    { platform: "Pinterest", category: "Living Environment", type: "Suburban", value: "34"},
+    { platform: "Pinterest", category: "Living Environment", type: "Rural", value: "31"},
 
     { platform: "Instagram", category: "Total", type: "Total", value: "28"},
     { platform: "Instagram", category: "Gender", type: "Men", value: "24"},
@@ -350,9 +399,9 @@ function getDataRows (platform,category) {
     { platform: "Instagram", category: "Income", type: "30000-49999", value: "27"},
     { platform: "Instagram", category: "Income", type: "50000-74999", value: "30"},
     { platform: "Instagram", category: "Income", type: "More than 75000", value: "26"},
-    { platform: "Instagram", category: "Living", type: "Urban", value: "32"},
-    { platform: "Instagram", category: "Living", type: "Suburban", value: "28"},
-    { platform: "Instagram", category: "Living", type: "Rural", value: "18"},
+    { platform: "Instagram", category: "Living Environment", type: "Urban", value: "32"},
+    { platform: "Instagram", category: "Living Environment", type: "Suburban", value: "28"},
+    { platform: "Instagram", category: "Living Environment", type: "Rural", value: "18"},
 
     { platform: "LinkedIn", category: "Total", type:"Total", value: "25"},
     { platform: "LinkedIn", category: "Gender", type:"Men", value: "26"},
@@ -371,11 +420,11 @@ function getDataRows (platform,category) {
     { platform: "LinkedIn", category: "Income", type:"30000-49999", value: "21"},
     { platform: "LinkedIn", category: "Income", type:"50000-74999", value: "32"},
     { platform: "LinkedIn", category: "Income", type:"More than 75000", value: "41"},
-    { platform: "LinkedIn", category: "Employment", type:"Employed", value: "32"},
-    { platform: "LinkedIn", category: "Employment", type:"Not Employed", value: "14"},
-    { platform: "LinkedIn", category: "Living", type:"Urban", value: "30"},
-    { platform: "LinkedIn", category: "Living", type:"Suburban", value: "26"},
-    { platform: "LinkedIn", category: "Living", type:"Rural", value: "12"},
+    { platform: "LinkedIn", category: "Employment Status", type:"Employed", value: "32"},
+    { platform: "LinkedIn", category: "Employment Status", type:"Not Employed", value: "14"},
+    { platform: "LinkedIn", category: "Living Environment", type:"Urban", value: "30"},
+    { platform: "LinkedIn", category: "Living Environment", type:"Suburban", value: "26"},
+    { platform: "LinkedIn", category: "Living Environment", type:"Rural", value: "12"},
 
     { platform: "Twitter", category: "Total", type:"Total", value: "23"},
     { platform: "Twitter", category: "Gender", type: "Men", value: "25"},
@@ -394,9 +443,9 @@ function getDataRows (platform,category) {
     { platform: "Twitter", category: "Income", type:"30000-49999", value: "19"},
     { platform: "Twitter", category: "Income", type:"50000-74999", value: "25"},
     { platform: "Twitter", category: "Income", type:"More than 75000", value: "26"},
-    { platform: "Twitter", category: "Living", type:"Urban", value: "30"},
-    { platform: "Twitter", category: "Living", type:"Suburban", value: "21"},
-    { platform: "Twitter", category: "Living", type:"Rural", value: "15"}
+    { platform: "Twitter", category: "Living Environment", type:"Urban", value: "30"},
+    { platform: "Twitter", category: "Living Environment", type:"Suburban", value: "21"},
+    { platform: "Twitter", category: "Living Environment", type:"Rural", value: "15"}
     ];
     
     return data.filter(function(row) {
