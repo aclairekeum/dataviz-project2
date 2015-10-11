@@ -146,6 +146,7 @@ function initializeTemplate(){
         //remove all the bars before appending any.
         svg.selectAll(".bar").remove();
         svg.selectAll(".label").remove();
+        svg.selectAll(".legend").remove();
         //update the bar grpahs
         platforms.forEach(function(platform,i){
             updateBars(platform, category, margin, chartWidth, chartHeight, barmargin, i)
@@ -167,6 +168,7 @@ function initializeTemplate(){
         ////append each data to a group within a platform
         var platformgroup = svg.selectAll(".g");
         var sel = platformgroup.data(thisData).enter().append("g");
+
 
         //append a rect for each group.
         sel.append("rect")
@@ -196,7 +198,29 @@ function initializeTemplate(){
             .duration(2050)
             .attr("y",function(d) {return height-margin-(chartHeight*d.value/100)+20; });
 
-    }
+        sel.append("rect")
+            .attr("class","legend")
+            .attr("x", chartWidth-150)
+            .attr("y", function(d,i){return chartHeight-450+20*i})
+            .attr("width",15)
+            .attr("height",15)
+            .attr("fill", function(d,i){return color(i)});
+
+        sel.append("rect")
+            .attr("class","legend")
+            .attr("x", chartWidth-150)
+            .attr("y", function(d,i){return chartHeight-450+20*i})
+            .attr("width",15)
+            .attr("height",15)
+            .attr("fill", function(d,i){return color(i)});
+
+        sel.append("text")
+            .attr("class","legend")
+            .attr("x", chartWidth-130)
+            .attr("y", function(d,i){return chartHeight-440+20*i})
+            .style("font-size", "12px")
+            .text(function(d){return d.type});
+        }
 
 
 /* From 
