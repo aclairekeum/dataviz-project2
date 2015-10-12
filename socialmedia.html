@@ -29,6 +29,7 @@
              font-size: 20px;
          }
 
+
          .title {
              font-weight: bold;
              font-size: 20px;
@@ -46,11 +47,7 @@
           shape-rendering: crispEdges;
         }
 
-        svg#viz {
-            margin-left:50px;
-            margin-right: 50px;
-            /*text-align: center;*/
-        }
+        }*/
     <style>
     text {
         font-family: sans-serif;
@@ -108,7 +105,7 @@
       <button type="button" class="btn btn-primary"id="button_Age">Age</button>
     </div>
 
-    <svg id="viz" height="600" width="1000" style="border: 1px solid grey;">
+    <svg id="viz" height="600" width="1200" style="border: 1px solid grey;">
     </svg>
 
     <script>
@@ -133,7 +130,7 @@ function run () {
     button_Age.addEventListener("click",function() { updateCategory("Age"); });
     button_Education.addEventListener("click",function() {updateCategory("Education"); });
     button_Employment.addEventListener("click",function() { updateCategory("Employment"); });
-    button_Living.addEventListener("click",function() { updateCategory("Living"); });
+    button_Living.addEventListener("click",function() { updateCategory("Living Environment"); });
     button_Income.addEventListener("click",function() { updateCategory("Income"); });  
 }
 
@@ -159,7 +156,7 @@ function initializeTemplate(){
         .attr("y",margin/2)
         .attr("dy","0.3em")
         .style("text-anchor","middle")
-        .text ("Comparison of " + category +" Percentage Difference across the platform");
+        .text (category +" Percentage Difference");
     //Platform group creation
     var platforms = ["Facebook","Instagram","Twitter","LinkedIn","Pinterest"];
     platforms.forEach(function(platform,i){
@@ -207,7 +204,7 @@ function initializeView(platform, demographicCategories){
 
         // update the title
         svg.select(".title")
-        .text ("Comparison of " + category +" Percentage Difference across the platform");
+        .text (category +" Percentage Difference");
         
         //remove all the bars before appending any.
         svg.selectAll(".bar").remove();
@@ -253,7 +250,7 @@ function initializeView(platform, demographicCategories){
          sel.append("text")
             .attr("class","label")
             .attr("x",function(v,i){
-                return i*(6)*(barmargin+barWidth)+order*(barmargin+barWidth);})
+                return i*(6)*(barmargin+barWidth)+order*(barmargin+barWidth)+barWidth/3;})
             .attr("y", height-margin)
             .style("font-size", "12px")
             .attr("fill","white")
