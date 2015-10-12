@@ -22,7 +22,7 @@
          .value {
              font-weight: bold;
              font-size: 16px;
-             fill: blue;
+             fill: #3366FF;
          }
 
          .label {
@@ -117,7 +117,7 @@ window.addEventListener("load",run);
 
 function run () {
     //initialize the template
-    var demographicCategories = ["Total Internet Users", "Gender", "Race", "Age", "Education", "Income", "Living Environment", "Employment Status"];
+    var demographicCategories = ["Gender", "Race", "Age", "Education", "Income", "Living Environment", "Employment"];
     initializeView("Facebook", demographicCategories);
 
     button_Facebook.addEventListener("click",function() { updateView("Facebook", demographicCategories); });
@@ -285,7 +285,7 @@ function initializeView(platform, demographicCategories){
 
 
 function initializeDemographicView(platform,category,xmargin, ymargin, yoffset, chartWidth, chartHeight, svg){
-    if (platform != 'LinkedIn' && category === 'Employment Status'){
+    if (platform != 'LinkedIn' && category === 'Employment'){
         var d = getDataRows('LinkedIn',category);
     }
     else {
@@ -329,7 +329,7 @@ function initializeDemographicView(platform,category,xmargin, ymargin, yoffset, 
         .endAngle(2*Math.PI);
 
     var opacity = 1;
-    if (category === "Employment Status" && platform != "LinkedIn"){
+    if (category === "Employment" && platform != "LinkedIn"){
         opacity = 0;
     }
 
