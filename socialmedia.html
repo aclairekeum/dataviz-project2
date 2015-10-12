@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <!--referenced http://bl.ocks.org/mbostock/3943967 for the stacked bar plot-->
 <html>
@@ -101,6 +100,14 @@ function initializeTemplate(){
     var width = svg.attr("width");
     var margin = 50;
 
+    var chartHeight = height - 2*margin;
+    var chartWidth = width - 2*margin;
+    var barmargin = 10;
+
+    var color = d3.scale.linear()
+        .domain([0, 5])
+        .range(["#AB374B", "#5D37AB"]);
+
     //Set a default title
     var category = "";
     svg.append("text")
@@ -114,16 +121,9 @@ function initializeTemplate(){
     //Platform group creation
     var platforms = ["Facebook","Instagram","Twitter","LinkedIn","Pinterest"];
     platforms.forEach(function(platform,i){
+
             svg.append("g")
             .attr("class",platform);
-
-            svg.selectAll("g")
-            .append("text")
-            .attr("x",margin+150*i)
-            .attr("y",height-margin+30)
-            .style("text-anchor","middle")
-            .text(platform);
-
         });
     
     }
@@ -146,7 +146,9 @@ function initializeTemplate(){
         //remove all the bars before appending any.
         svg.selectAll(".bar").remove();
         svg.selectAll(".label").remove();
-        svg.selectAll(".legend").remove();
+        // svg.selectAll(".legend").remove();
+        svg.selectAll(".type").remove();
+
         //update the bar grpahs
         platforms.forEach(function(platform,i){
             updateBars(platform, category, margin, chartWidth, chartHeight, barmargin, i)
@@ -162,8 +164,8 @@ function initializeTemplate(){
 
         //color scheme different for each type
         var color = d3.scale.linear()
-        .domain([0, thisData.length - 1])
-        .range(["#AB374B", "#5D37AB"]);
+        .domain([0, 4])
+        .range(["#E3094A", "#3509E3"]);
 
         ////append each data to a group within a platform
         var platformgroup = svg.selectAll(".g");
@@ -174,7 +176,7 @@ function initializeTemplate(){
         sel.append("rect")
             .attr("class","bar")
             .attr("x",function(v,i){
-                return order*(thisData.length+1)*(barmargin+barWidth)+i*(barmargin+barWidth);})
+                return i*(6)*(barmargin+barWidth)+order*(barmargin+barWidth);})
             .attr("y", height-margin)
             .attr("width",barWidth)
             .attr("height", 0)
@@ -183,13 +185,14 @@ function initializeTemplate(){
             .duration(2000)
             .attr("y",function(d) {return height-margin-(chartHeight*d.value/100); })
             .attr("height",function(d) { return chartHeight*d.value/100; })
-            .attr("fill",function(d,i){return color(i)});
+            .attr("fill",function(d){return color(order)});
 
         //add the values for each data point
+       
          sel.append("text")
             .attr("class","label")
             .attr("x",function(v,i){
-                return order*(thisData.length+1)*(barmargin+barWidth)+i*(barmargin+barWidth);})
+                return i*(6)*(barmargin+barWidth)+order*(barmargin+barWidth);})
             .attr("y", height-margin)
             .style("font-size", "12px")
             .attr("fill","white")
@@ -198,28 +201,50 @@ function initializeTemplate(){
             .duration(2050)
             .attr("y",function(d) {return height-margin-(chartHeight*d.value/100)+20; });
 
-        sel.append("rect")
-            .attr("class","legend")
-            .attr("x", chartWidth-150)
-            .attr("y", function(d,i){return chartHeight-450+20*i})
-            .attr("width",15)
-            .attr("height",15)
-            .attr("fill", function(d,i){return color(i)});
+        // sel.append("rect")
+        //     .attr("class","legend")
+        //     .attr("x", chartWidth-150)
+        //     .attr("y", function(d,i){return chartHeight-450+20*i})
+        //     .attr("width",15)
+        //     .attr("height",15)
+        //     .attr("fill", function(d){return color(order)});
+
+        // sel.append("rect")
+        //     .attr("class","legend")
+        //     .attr("x", chartWidth-150)
+        //     .attr("y", function(d,i){return chartHeight-450+20*i})
+        //     .attr("width",15)
+        //     .attr("height",15)
+        //     .attr("fill", function(d,i){return color(i)});
+    
+        sel.append("text")
+            .attr("class","type")
+            .attr("x",function(d,i){return i*(6)*(barmargin+barWidth)+100;})
+            .attr("y",height-margin+30)
+            .style("text-anchor","middle")
+            .text(function(d){return d.type});
 
         sel.append("rect")
-            .attr("class","legend")
-            .attr("x", chartWidth-150)
-            .attr("y", function(d,i){return chartHeight-450+20*i})
-            .attr("width",15)
-            .attr("height",15)
-            .attr("fill", function(d,i){return color(i)});
+                .attr("class","legend")
+                .attr("x", chartWidth-150)
+                .attr("y", chartHeight-450+20*order)
+                .attr("width",15)
+                .attr("height",15)
+                .attr("fill",color(order));
 
         sel.append("text")
-            .attr("class","legend")
-            .attr("x", chartWidth-130)
-            .attr("y", function(d,i){return chartHeight-440+20*i})
-            .style("font-size", "12px")
-            .text(function(d){return d.type});
+                .attr("class","legend")
+                .attr("x", chartWidth-130)
+                .attr("y", chartHeight-440+20*order)
+                .style("font-size", "12px")
+                .text(platform);
+        // sel.append("text")
+        //     .attr("class","legend")
+        //     .attr("x", chartWidth-130)
+        //     .attr("y", function(d,i){return chartHeight-440+20*i})
+        //     .style("font-size", "12px")
+        //     .text(platform)
+            // .text(function(d){return d.type});
         }
 
 
