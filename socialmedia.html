@@ -201,22 +201,6 @@ function initializeTemplate(){
             .duration(2050)
             .attr("y",function(d) {return height-margin-(chartHeight*d.value/100)+20; });
 
-        // sel.append("rect")
-        //     .attr("class","legend")
-        //     .attr("x", chartWidth-150)
-        //     .attr("y", function(d,i){return chartHeight-450+20*i})
-        //     .attr("width",15)
-        //     .attr("height",15)
-        //     .attr("fill", function(d){return color(order)});
-
-        // sel.append("rect")
-        //     .attr("class","legend")
-        //     .attr("x", chartWidth-150)
-        //     .attr("y", function(d,i){return chartHeight-450+20*i})
-        //     .attr("width",15)
-        //     .attr("height",15)
-        //     .attr("fill", function(d,i){return color(i)});
-    
         sel.append("text")
             .attr("class","type")
             .attr("x",function(d,i){return i*(6)*(barmargin+barWidth)+100;})
@@ -224,6 +208,7 @@ function initializeTemplate(){
             .style("text-anchor","middle")
             .text(function(d){return d.type});
 
+        //legend
         sel.append("rect")
                 .attr("class","legend")
                 .attr("x", chartWidth-150)
@@ -238,13 +223,6 @@ function initializeTemplate(){
                 .attr("y", chartHeight-440+20*order)
                 .style("font-size", "12px")
                 .text(platform);
-        // sel.append("text")
-        //     .attr("class","legend")
-        //     .attr("x", chartWidth-130)
-        //     .attr("y", function(d,i){return chartHeight-440+20*i})
-        //     .style("font-size", "12px")
-        //     .text(platform)
-            // .text(function(d){return d.type});
         }
 
 
