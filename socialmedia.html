@@ -22,7 +22,7 @@
          .value {
              font-weight: bold;
              font-size: 16px;
-             fill: blue;
+             fill: #3366FF;
          }
 
          .label {
@@ -114,7 +114,7 @@ window.addEventListener("load",run);
 
 function run () {
     //initialize the template
-    var demographicCategories = ["Total Internet Users", "Gender", "Race", "Age", "Education", "Income", "Living Environment", "Employment Status"];
+    var demographicCategories = ["Gender", "Race", "Age", "Education", "Income", "Living Environment", "Employment"];
     initializeView("Facebook", demographicCategories);
 
     button_Facebook.addEventListener("click",function() { updateView("Facebook", demographicCategories); });
@@ -282,7 +282,7 @@ function initializeView(platform, demographicCategories){
 
 
 function initializeDemographicView(platform,category,xmargin, ymargin, yoffset, chartWidth, chartHeight, svg){
-    if (platform != 'LinkedIn' && category === 'Employment Status'){
+    if (platform != 'LinkedIn' && category === 'Employment'){
         var d = getDataRows('LinkedIn',category);
     }
     else {
@@ -326,7 +326,7 @@ function initializeDemographicView(platform,category,xmargin, ymargin, yoffset, 
         .endAngle(2*Math.PI);
 
     var opacity = 1;
-    if (category === "Employment Status" && platform != "LinkedIn"){
+    if (category === "Employment" && platform != "LinkedIn"){
         opacity = 0;
     }
 
@@ -431,6 +431,7 @@ function updateView(platform,demographicCategories){
 }
 
 function updateDemographicView(platform,category,xmargin,ymargin,yoffset, chartWidth, chartHeight, svg){
+    //We don't need to run though this if we're updating the employment status for anything other than LinkedIn
 
     var data = getDataRows(platform,category);
     console.log(data);
@@ -471,44 +472,49 @@ function updateDemographicView(platform,category,xmargin,ymargin,yoffset, chartW
         .endAngle(2*Math.PI);
 
     var opacity = 1;
-    if (category === "Employment Status" && platform != "LinkedIn"){
+    var update = 1;
+    if (category === "Employment" && platform != "LinkedIn"){
         opacity = 0;
+        update = 0;
     }
 
     var demographicGroup = svg.select("."+ category.replace(/\s/g, ''));
 
     demographicGroup.style("opacity", opacity);
 
-    demographicGroup.select(".charttitle")
-        .text("Internet Users on " + platform + " by " + category);
+    if (update === 1) {
+        demographicGroup.select(".charttitle")
+            .text("Internet Users on " + platform + " by " + category);
 
-    var sel = demographicGroup.selectAll("g");
+        var sel = demographicGroup.selectAll("g");
 
-    sel.select(".userslice")
-        .each(function(d,i) {
-            //This is a little weird. We want to preserve
-            //the startangle and endangle information so
-            //we can't override the data. We do, however, 
-            //want to be able to update the arc, so we do 
-            //need to change the platform and the value. 
-            //Is there a better way to do this?
-            d.platform = platform;
-            console.log(data);
-            d.value = data[i].value;
-        })
-        .transition()
-        .duration(750)
-        .attrTween("d", function(d,i) {
-            var interpolate = d3.interpolate( d.endAngle, Math.PI*d.value/50 );
-            return function(t) {
-                d.endAngle = interpolate(t);
-                d.startAngle = 0;
-                return userArc(d);
-            };
-        })
-    sel.select(".value")
-        .text(function(d) {return d.value + "%";})
+        sel.select(".userslice")
+            .each(function(d,i) {
+                //This is a little weird. We want to preserve
+                //the startangle and endangle information so
+                //we can't override the data. We do, however, 
+                //want to be able to update the arc, so we do 
+                //need to change the platform and the value. 
+                //Is there a better way to do this?
+                d.platform = platform;
+                console.log(data);
+                d.value = data[i].value;
+            })
+            .transition()
+            .duration(750)
+            .attrTween("d", function(d,i) {
+                var interpolate = d3.interpolate( d.endAngle, Math.PI*d.value/50 );
+                return function(t) {
+                    d.endAngle = interpolate(t);
+                    d.startAngle = 0;
+                    return userArc(d);
+                };
+            })
+        sel.select(".value")
+            .text(function(d) {return d.value + "%";})
     }
+    
+}
 /* From 
    http://www.pewinternet.org/files/2015/08/Social-Media-Update-2015-FINAL2.pdf
 */
