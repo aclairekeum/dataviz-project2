@@ -8,7 +8,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-
      <style>
          text {
             font-family: sans-serif;
@@ -76,8 +75,6 @@
     }
 
     </style>
-
-
     </style>
   </head>
   
@@ -93,7 +90,6 @@
 
     <svg id="vizq1" height="1800" width="1000" style="border: 1px solid grey;">
     </svg>
-
     
     <div class= "buttons">
       <button type="button" class="btn btn-primary" id="button_Gender">Gender</button>
@@ -123,6 +119,8 @@ function run () {
     button_LinkedIn.addEventListener("click",function() { updateView("LinkedIn", demographicCategories); });
     button_Twitter.addEventListener("click",function() { updateView("Twitter", demographicCategories); });
 
+    //Part2
+    //Initialize template
     initializeTemplate();
     //assign the button events
     button_Gender.addEventListener("click",function() { updateCategory("Gender");});
