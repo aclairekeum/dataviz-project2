@@ -88,7 +88,7 @@
         <button type="button" class="btn btn-primary"id="button_Twitter">Twitter</button>
     </div>
 
-    <svg id="vizq1" height="1800" width="1000" style="border: 1px solid grey;">
+    <svg id="vizq1" height="1800" width="1200" style="border: 1px solid grey;">
     </svg>
     
     <div class= "buttons">
@@ -109,10 +109,13 @@
 window.addEventListener("load",run);
 
 function run () {
-    //initialize the template
+   //A list of all the demographic categories we have data for
     var demographicCategories = ["Gender", "Race", "Age", "Education", "Income", "Living Environment", "Employment"];
+
+    //Initialize the visualizations for the first part
     initializeView("Facebook", demographicCategories);
 
+    //Event listeners
     button_Facebook.addEventListener("click",function() { updateView("Facebook", demographicCategories); });
     button_Pinterest.addEventListener("click",function() { updateView("Pinterest", demographicCategories); });
     button_Instagram.addEventListener("click",function() { updateView("Instagram", demographicCategories); });
@@ -131,38 +134,7 @@ function run () {
     button_Living.addEventListener("click",function() { updateCategory("Living Environment"); });
     button_Income.addEventListener("click",function() { updateCategory("Income"); });  
 }
-
-function initializeTemplate(){
-    //SVG import
-    var svgns = "http://www.w3.org/2000/svg";
-    var svg = d3.select("#viz");
-    // Sizing
-    var height = svg.attr("height");
-    var width = svg.attr("width");
-    var margin = 50;
-    var chartHeight = height - 2*margin;
-    var chartWidth = width - 2*margin;
-    var barmargin = 10;
-    var color = d3.scale.linear()
-        .domain([0, 5])
-        .range(["#AB374B", "#5D37AB"]);
-    //Set a default title
-    var category = "";
-    svg.append("text")
-        .attr("class","title")
-        .attr("x",width/2)
-        .attr("y",margin/2)
-        .attr("dy","0.3em")
-        .style("text-anchor","middle")
-        .text (category +" Percentage Difference");
-    //Platform group creation
-    var platforms = ["Facebook","Instagram","Twitter","LinkedIn","Pinterest"];
-    platforms.forEach(function(platform,i){
-            svg.append("g")
-            .attr("class",platform);
-        });
-    
-    }
+//Part 1 Functions
 function initializeView(platform, demographicCategories){
     var svg = d3.select("#vizq1");
     // get the size of the SVG element
@@ -172,9 +144,13 @@ function initializeView(platform, demographicCategories){
     var svgns = "http://www.w3.org/2000/svg";
     // the chart lives in the svg surrounded by a margin of 100px
     var margin = 100;
+    //The margin between various visualizations
     var innerMargin = margin/10;
+    //Caluclate the height of each individual chart
     var chartHeight = (height - 2*margin -(demographicCategories.length-1)*innerMargin)/demographicCategories.length;
+    //The width of all the mini-charts
     var chartWidth = width - 2*margin;
+    //Create the title for each platform
     svg.append("text")
         .attr("class","title")
         .attr("x",width/2)
@@ -182,6 +158,8 @@ function initializeView(platform, demographicCategories){
         .attr("dy","0.3em")
         .style("text-anchor","middle")
         .text ("The Demographics of " + platform);
+
+    //Initialize the views for all the different demographic categories
     demographicCategories.forEach(function(category,i) {
         var yoffset = margin + (chartHeight+innerMargin)*(i);
         console.log(category);
@@ -189,97 +167,10 @@ function initializeView(platform, demographicCategories){
     });
 }
 
-    function updateCategory(category){
-        var platforms = ["Facebook","Instagram","Twitter","LinkedIn","Pinterest"];
-        var svg = d3.select("#viz");
-        var height = svg.attr("height");
-        var width = svg.attr("width");
-        var margin = 50;
-
-        var chartHeight = height - 2*margin;
-        var chartWidth = width - 2*margin;
-        var barmargin = 10;
-
-        // update the title
-        svg.select(".title")
-        .text (category +" Percentage Difference");
-        
-        //remove all the bars before appending any.
-        svg.selectAll(".bar").remove();
-        svg.selectAll(".label").remove();
-        // svg.selectAll(".legend").remove();
-        svg.selectAll(".type").remove();
-
-        //update the bar grpahs
-        platforms.forEach(function(platform,i){
-            updateBars(platform, category, margin, chartWidth, chartHeight, barmargin, i)
-        });
-    }
-
-    function updateBars(platform, category, margin, chartWidth, chartHeight, barmargin, order){
-        var svg = d3.select("#viz");
-        var height = svg.attr("height")
-        var thisData = getDataRows(platform, category);
-        var type_len = thisData.length;
-        var barWidth = (chartWidth/(5*(type_len+1)-1))-barmargin;
-        //color scheme different for each type
-        var color = d3.scale.linear()
-        .domain([0, 4])
-        .range(["#E3094A", "#3509E3"]);
-        ////append each data to a group within a platform
-        var platformgroup = svg.selectAll(".g");
-        var sel = platformgroup.data(thisData).enter().append("g");
-        //append a rect for each group.
-        sel.append("rect")
-            .attr("class","bar")
-            .attr("x",function(v,i){
-                return i*(6)*(barmargin+barWidth)+order*(barmargin+barWidth);})
-            .attr("y", height-margin)
-            .attr("width",barWidth)
-            .attr("height", 0)
-        //give a transition event
-            .transition()
-            .duration(2000)
-            .attr("y",function(d) {return height-margin-(chartHeight*d.value/100); })
-            .attr("height",function(d) { return chartHeight*d.value/100; })
-            .attr("fill",function(d){return color(order)});
-        //add the values for each data point
-       
-         sel.append("text")
-            .attr("class","label")
-            .attr("x",function(v,i){
-                return i*(6)*(barmargin+barWidth)+order*(barmargin+barWidth)+barWidth/3;})
-            .attr("y", height-margin)
-            .style("font-size", "12px")
-            .attr("fill","white")
-            .text(function(d){return d.value;})
-            .transition()
-            .duration(2050)
-            .attr("y",function(d) {return height-margin-(chartHeight*d.value/100)+20; });
-        sel.append("text")
-            .attr("class","type")
-            .attr("x",function(d,i){return i*(6)*(barmargin+barWidth)+100;})
-            .attr("y",height-margin+30)
-            .style("text-anchor","middle")
-            .text(function(d){return d.type});
-        //legend
-        sel.append("rect")
-                .attr("class","legend")
-                .attr("x", chartWidth-150)
-                .attr("y", chartHeight-450+20*order)
-                .attr("width",15)
-                .attr("height",15)
-                .attr("fill",color(order));
-        sel.append("text")
-                .attr("class","legend")
-                .attr("x", chartWidth-130)
-                .attr("y", chartHeight-440+20*order)
-                .style("font-size", "12px")
-                .text(platform);
-        }
-
-
 function initializeDemographicView(platform,category,xmargin, ymargin, yoffset, chartWidth, chartHeight, svg){
+    
+    //This is to account for employment stuff, to initialize this vew too, even
+    //if we don't have the data
     if (platform != 'LinkedIn' && category === 'Employment'){
         var d = getDataRows('LinkedIn',category);
     }
@@ -292,6 +183,7 @@ function initializeDemographicView(platform,category,xmargin, ymargin, yoffset, 
     var svgns = "http://www.w3.org/2000/svg";
 
     // Get the outer radius of each donut
+    //This can either be contstrained by the height of width of the chart
     var radius = 0;
     if ((chartWidth/d.length - xmargin/2) < (chartHeight - 2*ymargin)) {
         radius = chartWidth/(2*d.length) - xmargin/2;
@@ -299,35 +191,31 @@ function initializeDemographicView(platform,category,xmargin, ymargin, yoffset, 
     else {
         radius = chartHeight/2 - 2*ymargin;
     }
+    //The center of each donut
     var centery = yoffset + chartHeight/2 + ymargin;
  
+    //The width of each "section" of a view
     var sectionWidth = chartWidth/(2*d.length);
 
+    //This is the arc for the data
     var userArc = d3.svg.arc()
         .innerRadius(radius/2)
         .outerRadius(radius);
 
-    var backgroundArc = d3.svg.arc()
-        .innerRadius(16*radius/30)
-        .outerRadius(29*radius/30)
-        .startAngle(0)
-        .endAngle(2*Math.PI);
-
-    var userArc = d3.svg.arc()
-        .innerRadius(radius/2)
-        .outerRadius(radius);
-
+    //The backgroud arc -- By just drawing a circle, and then drawing part of an arc on top, I make it look like I have an arc for facebook users and an arc for non-facebook internet users
     var backgroundArc = d3.svg.arc()
         .innerRadius(17*radius/30)
         .outerRadius(28*radius/30)
         .startAngle(0)
         .endAngle(2*Math.PI);
 
+    //Set the opacity of the employment section
     var opacity = 1;
     if (category === "Employment" && platform != "LinkedIn"){
         opacity = 0;
     }
 
+    //Create a group for each demographic
     var demographicGroup = svg.append("g")
         .attr("class", category.replace(/\s/g, ''))
         .style("opacity", opacity);
@@ -367,6 +255,7 @@ function initializeDemographicView(platform,category,xmargin, ymargin, yoffset, 
             return "translate(" + (xmargin + (2*i+1)*sectionWidth) + "," + centery + ")";})
         .attr("class", "backgroundcircle");
 
+    //Draw the arc that corresponds to the data
     sel.append("path")
         .each(function(d,i) {
             d.startAngle = 0;
@@ -376,6 +265,7 @@ function initializeDemographicView(platform,category,xmargin, ymargin, yoffset, 
         .attr("transform", function(d,i) {return "translate(" + (xmargin + (2*i+1)*sectionWidth) + "," + centery + ")"})
         .attr("class", "userslice");
     
+    //Label the each of the donut chartes
     sel.append("text")
         .attr("class","label")
         .attr("x",function(d,i) { 
@@ -388,6 +278,7 @@ function initializeDemographicView(platform,category,xmargin, ymargin, yoffset, 
         .style("text-anchor","middle")
         .text(function(d) { return d.type; });
 
+    //Draw the value of the data in the center of each donut chart
     sel.append("text")
         .attr("class","value")
         .attr("x",function(d,i) { 
@@ -401,9 +292,9 @@ function initializeDemographicView(platform,category,xmargin, ymargin, yoffset, 
 
 function updateView(platform,demographicCategories){
 
-	var svg = d3.select("#vizq1");
+    var svg = d3.select("#vizq1");
 
-	 // get the size of the SVG element
+     // get the size of the SVG element
     var height = svg.attr("height");
     var width = svg.attr("width");
 
@@ -420,6 +311,7 @@ function updateView(platform,demographicCategories){
     svg.select(".title")
         .text("The Demographics of "+ platform);
 
+    //Update each of the demographic charts
     demographicCategories.forEach(function(category,i) {
         var yoffset =  margin + (chartHeight+innerMargin)*(i);
         console.log(category);
@@ -445,30 +337,25 @@ function updateDemographicView(platform,category,xmargin,ymargin,yoffset, chartW
     else {
         radius = chartHeight/2 - 2*ymargin;
     }
+    //The y value of the center of each donut
     var centery = yoffset + chartHeight/2 + ymargin;
  
+    //The width of each individual chart
     var sectionWidth = chartWidth/(2*data.length);
 
+    //The arc for the user's data
     var userArc = d3.svg.arc()
         .innerRadius(radius/2)
         .outerRadius(radius);
 
-    var backgroundArc = d3.svg.arc()
-        .innerRadius(16*radius/30)
-        .outerRadius(29*radius/30)
-        .startAngle(0)
-        .endAngle(2*Math.PI);
-
-    var userArc = d3.svg.arc()
-        .innerRadius(radius/2)
-        .outerRadius(radius);
-
+    //The background arc
     var backgroundArc = d3.svg.arc()
         .innerRadius(17*radius/30)
         .outerRadius(28*radius/30)
         .startAngle(0)
         .endAngle(2*Math.PI);
 
+    //Handle imployment stuff for LinkedIn
     var opacity = 1;
     var update = 1;
     if (category === "Employment" && platform != "LinkedIn"){
@@ -476,16 +363,22 @@ function updateDemographicView(platform,category,xmargin,ymargin,yoffset, chartW
         update = 0;
     }
 
+    //Get the group corresponding to the demographic we want to update
     var demographicGroup = svg.select("."+ category.replace(/\s/g, ''));
 
+    //Make sure this has the right opactity (this is more LinkedIn employment status stuff)
     demographicGroup.style("opacity", opacity);
 
+    //Only update the chart if we should update (as in don't update for platforms that don't have employment status data)
     if (update === 1) {
+        //Update the title of the visualization
         demographicGroup.select(".charttitle")
             .text("Internet Users on " + platform + " by " + category);
 
+        //Get the group we're supposed to be updating.
         var sel = demographicGroup.selectAll("g");
 
+        //Add the right data and transition by drawing new arcs
         sel.select(".userslice")
             .each(function(d,i) {
                 //This is a little weird. We want to preserve
@@ -507,12 +400,137 @@ function updateDemographicView(platform,category,xmargin,ymargin,yoffset, chartW
                     d.startAngle = 0;
                     return userArc(d);
                 };
-            })
+            });
+
+
         sel.select(".value")
             .text(function(d) {return d.value + "%";})
     }
     
 }
+
+//Part 2 Functions
+function initializeTemplate(){
+    //SVG import
+    var svgns = "http://www.w3.org/2000/svg";
+    var svg = d3.select("#viz");
+    // Sizing
+    var height = svg.attr("height");
+    var width = svg.attr("width");
+    var margin = 50;
+    var chartHeight = height - 2*margin;
+    var chartWidth = width - 2*margin;
+    var barmargin = 10;
+    var color = d3.scale.linear()
+        .domain([0, 5])
+        .range(["#AB374B", "#5D37AB"]);
+    //Set a default title
+    var category = "";
+    svg.append("text")
+        .attr("class","title")
+        .attr("x",width/2)
+        .attr("y",margin/2)
+        .attr("dy","0.3em")
+        .style("text-anchor","middle")
+        .text (category +" Percentage Difference");
+    //Platform group creation
+    var platforms = ["Facebook","Instagram","Twitter","LinkedIn","Pinterest"];
+    platforms.forEach(function(platform,i){
+            svg.append("g")
+            .attr("class",platform);
+    });
+}
+
+
+function updateCategory(category){
+    var platforms = ["Facebook","Instagram","Twitter","LinkedIn","Pinterest"];
+    var svg = d3.select("#viz");
+    var height = svg.attr("height");
+    var width = svg.attr("width");
+    var margin = 50;
+
+    var chartHeight = height - 2*margin;
+    var chartWidth = width - 2*margin;
+    var barmargin = 10;
+
+    // update the title
+    svg.select(".title")
+    .text (category +" Percentage Difference");
+    
+    //remove all the bars before appending any.
+    svg.selectAll(".bar").remove();
+    svg.selectAll(".label").remove();
+    // svg.selectAll(".legend").remove();
+    svg.selectAll(".type").remove();
+
+    //update the bar grpahs
+    platforms.forEach(function(platform,i){
+        updateBars(platform, category, margin, chartWidth, chartHeight, barmargin, i)
+    });
+}
+
+function updateBars(platform, category, margin, chartWidth, chartHeight, barmargin, order){
+    var svg = d3.select("#viz");
+    var height = svg.attr("height")
+    var thisData = getDataRows(platform, category);
+    var type_len = thisData.length;
+    var barWidth = (chartWidth/(5*(type_len+1)-1))-barmargin;
+    //color scheme different for each type
+    var color = d3.scale.linear()
+    .domain([0, 4])
+    .range(["#E3094A", "#3509E3"]);
+    ////append each data to a group within a platform
+    var platformgroup = svg.selectAll(".g");
+    var sel = platformgroup.data(thisData).enter().append("g");
+    //append a rect for each group.
+    sel.append("rect")
+        .attr("class","bar")
+        .attr("x",function(v,i){
+            return i*(6)*(barmargin+barWidth)+order*(barmargin+barWidth);})
+        .attr("y", height-margin)
+        .attr("width",barWidth)
+        .attr("height", 0)
+    //give a transition event
+        .transition()
+        .duration(2000)
+        .attr("y",function(d) {return height-margin-(chartHeight*d.value/100); })
+        .attr("height",function(d) { return chartHeight*d.value/100; })
+        .attr("fill",function(d){return color(order)});
+    //add the values for each data point
+   
+     sel.append("text")
+        .attr("class","label")
+        .attr("x",function(v,i){
+            return i*(6)*(barmargin+barWidth)+order*(barmargin+barWidth)+barWidth/3;})
+        .attr("y", height-margin)
+        .style("font-size", "12px")
+        .attr("fill","white")
+        .text(function(d){return d.value;})
+        .transition()
+        .duration(2050)
+        .attr("y",function(d) {return height-margin-(chartHeight*d.value/100)+20; });
+    sel.append("text")
+        .attr("class","type")
+        .attr("x",function(d,i){return i*(6)*(barmargin+barWidth)+100;})
+        .attr("y",height-margin+30)
+        .style("text-anchor","middle")
+        .text(function(d){return d.type});
+    //legend
+    sel.append("rect")
+            .attr("class","legend")
+            .attr("x", chartWidth-150)
+            .attr("y", chartHeight-450+20*order)
+            .attr("width",15)
+            .attr("height",15)
+            .attr("fill",color(order));
+    sel.append("text")
+            .attr("class","legend")
+            .attr("x", chartWidth-130)
+            .attr("y", chartHeight-440+20*order)
+            .style("font-size", "12px")
+            .text(platform);
+}
+
 /* From 
    http://www.pewinternet.org/files/2015/08/Social-Media-Update-2015-FINAL2.pdf
 */
